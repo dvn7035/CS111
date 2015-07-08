@@ -1,0 +1,21 @@
+CS 111 Summer 2015
+
+Project members: 
+
+Tien Le (604180315)
+David Nguyen (304177673)
+
+
+Implementation notes for Lab 1A:
+
+This program appears to be fully functional for all test cases tested in the
+shell scripts provided. Beyond that, there are no known possible cases where the
+command parser will output an incorrect command tree. When an error occurs, the
+program will print the line where the error occured with a short description of 
+what error the program encountered.
+
+Current Limitations:
+
+- None encountered
+
+

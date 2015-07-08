@@ -1,0 +1,57 @@
+Name: David Nguyen
+UCLA ID: 304177673
+
+
+-------------------------------------------------------------------------------
+
+Response to Exercise 1:
+
+Yes the sys_getpid() call will have the correct value since in the 
+INT_SYS_GETPID clause you have already saved the current pid in the eax 
+register. Although schedule() might execute a process that overwrites eax 
+later, schedule() does context switching which restores any registers that
+the other processes might have changed.
+
+Response to Exercise 2:
+Refer to do_fork() and copy_stack().
+
+
+Response to Exercise 3:
+
+I added an extra field in the process_t structure called
+p_waiting which holds the id of a process so that every
+process will have a pid of a process that has called 
+sys_wait() on it. If no processes are waiting then the value
+will be 0.
+
+When a process calls sys_wait() it will change it's status to P_BLOCKED
+and update the p_waiting field of the process it is waiting on. Schedule()
+when called will ignore the waiting, blocked process/
+
+Respnse to Exercise 4: 
+The reason why processes were not being reaped was because when a process was
+finished and called sys_exit() the process status was set to P_ZOMBIE and not
+P_EMPTY. 
+
+Anything else you'd like us to know:
+
+
+
+Extra credit exercises:
+
+Exercise 7:
+With my current implementation of forking, the following prints out 
+10 without the need of voltaile pointers or pointers to volatile data.
+
+void start(void) {
+        int x = 0; /* note that local variable x lives on the stack */
+        pid_t p = sys_fork();
+        if (p == 0)
+            x = 1;
+        else if (p > 0)
+            sys_wait(p); // assume blocking implementation
+        app_printf("%d", x);
+        sys_exit(0);
+}
+
+

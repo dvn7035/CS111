@@ -51,7 +51,7 @@ void setRedirection(command_t c){
 void execute(command_t c){
 	switch(c->type){
 	case SIMPLE_COMMAND:
-		int pid = fork();
+		pid_t pid = fork();
 		int status;		
 
 		if(pid == 0){
@@ -64,14 +64,15 @@ void execute(command_t c){
 			//If parent process
 			waitpid(pid, &status, 0);
 			int exitStatus = WEXITSTATUS(status);
-			//Set status and then break
+			//Set status and then exit
 			c->status = exitStatus;
+			_exit(exitStatus);
 		} else if (pid < 0){
 			error(1, 0, "Error: Fork failed\n");
 		}
 		break;
 	case AND_COMMAND:
-		int pid = fork();
+		pid_t pid = fork();
 		int status;	
 		
 		if(pid == 0){
@@ -98,14 +99,14 @@ void execute(command_t c){
 				}
 			} else {
 				c->status = exitStatus;
-				exit(exitStatus);
+				_exit(exitStatus);
 			}
 		} else if(pid < 0){
 			error(1,0, "Error: Fork failed\n");
 		}
 		break;
 	case OR_COMMAND:
-		int pid = fork();
+		pid_t pid = fork();
 		int status;	
 		
 		if(pid == 0){
@@ -118,29 +119,74 @@ void execute(command_t c){
 			//If status is not equal to 0, we run u.command[1], otherwise we exit with status 0
 			if(exitStatus != 0){
 				execute(c->u.command[1]);
-				int pid2 = fork();
+				pid_t pid2 = fork();
 
 				if(pid2 == 0){
 					execute(c->u.command[1]);
 				} else if(pid2 > 0){
 					waitpid(pid2, &status, 0);
 					exitStatus = WEXITSTATUS(status);
-
-					c->status = WEXITSTATUS(status);
+					c->status = exitStatus;
 				} else if(pid2 < 0){
 					error(1,0, "Error: Fork failed\n");
 				}
 			} else {
 				c->status = exitStatus;
-				exit(exitStatus);
+				_exit(exitStatus);
 			}
 		} else if(pid < 0){
 			error(1,0, "Error: Fork failed\n");
 		}
 		break;
 	case SEQUENCE_COMMAND:
+		//TODO: Check this logic
+		//Sequence command: Execute left subtree, then right
+		pid_t pid = fork();
+		int status, exitStatus;
+		
+		if(pid == 0){
+			//Child process executes left subtree, returns
+			execute(c->u.command[0]);
+		} else if(pid > 0){
+			// Parent process sets status code, forks and executes right subtree
+			waitpid(pid, &status, 0);
+			exitStatus = WEXITSTATUS(status);
+			c->u.command[0]->status = exitStatus;
+
+			//Now we execute the right subtree
+			pid_t pid2 = fork();
+			if(pid2 == 0){
+				execute(c->u.command[0]);
+			} else if(pid2 > 0){
+				waitpid(pid2,&status,0);
+				exitStatus = WEXITSTATUS(status);
+				c->u.command[1]->status = exitStatus;
+				c->command->status = exitStatus;
+				_exit(c->command->status);
+			} else if(pid2 < 0){
+				error(1,0,"Error: Fork failed\n");
+			}
+		} else if(pid < 0){
+			error(1,0, "Error: Fork failed\n");
+		}
 		break;
 	case SUBSHELL_COMMAND:
+		pid_t pid = fork();
+		int status;
+		//Recursively call execute, but set redirection first
+		if(pid == 0){
+			//If child process
+			setRedirection(c);
+			execute(c);
+		} else if(pid > 0){
+			// If parent process
+			waitpid(pid, &status, 0);
+			exitStatus = WEXITSTATUS(status);
+			c-> status = exitStatus;
+			_exit(exitStatus);
+		} else if(pid < 0){
+			error(1,0,"Error: Fork failed\n");
+		}
 		break;
 	case PIPE_COMMAND:
 		break;
@@ -158,7 +204,17 @@ execute_command (command_t c, int time_travel)
   /* FIXME: Replace this with your implementation.  You may need to
      add auxiliary functions and otherwise modify the source code.
      You can also use external functions defined in the GNU C Library.  */
-  
-	if(time_travel == 1)
-		error (1, 0, "command execution not yet implemented");
+	pid_t pid = fork();
+	int status;
+
+	if( pid == 0){
+		execute(c);
+	} else if(pid > 0){
+		waitpid(pid, &status, 0);
+		int exitStatus = WEXITSTATUS(status);
+		c->status = exitStatus;
+	} else if(pid < 0){
+		error(1,0,"Error: Fork failed\n");
+	}
+	execute(c);
 }

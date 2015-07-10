@@ -189,6 +189,37 @@ void execute(command_t c){
 		}
 		break;
 	case PIPE_COMMAND:
+		int filedescriptor[2];
+		if (pipe(buf) != 0 )
+      		error (1, errno, "Pipes could not be initialized");
+		pid_t pid = fork()
+		if (pid == 0) //Child process executres left hand side
+		{
+			dup2(filedescriptor[1], STDOUT);
+			close(filedescriptor[0]);
+			execute(c->command[0]);
+			_exit(c->command[0]->status);  //handles closing of all file descriptors
+		}
+		else if (pid > 0) //Parent process waits for child and then executes right hand side
+		{
+			int status, int exitStatus;
+			waitpid(pid,&status,0)
+			exitStatus = WEXITSTATUS(status)
+			if (exitStatus == 0) //if successful exit status
+			{
+				int STDIN_DUPLICATE = dup(STDIN);
+				dup2(filedescriptor[0], STDIN);
+				close(filedescriptor[1]);
+				execute(c->command[1]);
+				close(filedescriptor[0]);   //Close 
+				dup2(STDIN_DUPLICATE, STDIN);  //restored STDIN
+				c->status = c->u.command[1]->status || c->u.command[0]->status; //OR the status so that if both are good then
+			}
+			else 
+				error(1, errno, "Left hand side of pipe did not execute");
+		}
+		else if (pid < 0)
+			error(1,0,"Error: Fork failed\n");
 		break;
 	default:
 		error(1,0 "Error: Invalid command\n");

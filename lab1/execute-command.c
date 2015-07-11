@@ -6,9 +6,13 @@
 #include "command-internals.h"
 
 #include <error.h>
+#include <stddef.h>
 
-/* FIXME: You may need to add #include directives, macro definitions,
-   static function definitions, etc.  */
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 
 void execute(command_t c);
 void setRedirection(command_t c);
@@ -49,17 +53,20 @@ void setRedirection(command_t c){
 
 
 void execute(command_t c){
+	
+	pid_t pid;
+	int status, exitStatus;
+
 	switch(c->type){
 	case SIMPLE_COMMAND:
-		pid_t pid = fork();
-		int status;		
-
+		pid = fork();
+		
 		if(pid == 0){
 			//If child process
 			setRedirection(c);
 			//Execute the simple command, print error if execvp returns
 			execvp(c->u.word[0], c->u.word);
-			error(1,0 "Error: Execution of command failed\n");
+			error(1,0,"Error: Execution of command failed\n");
 		} else if (pid > 0){
 			//If parent process
 			waitpid(pid, &status, 0);
@@ -72,15 +79,14 @@ void execute(command_t c){
 		}
 		break;
 	case AND_COMMAND:
-		pid_t pid = fork();
-		int status;	
+		pid = fork();
 		
 		if(pid == 0){
 			//If child
 			execute(c->u.command[0]);
 		} else if(pid > 0){
 			waitpid(pid, &status, 0);
-			int exitStatus = WEXITSTATUS(status);
+			exitStatus = WEXITSTATUS(status);
 			// AND COMMAND
 			//If status is 0, we run u.command[1], otherwise we exit with whatever status
 			if(exitStatus == 0){
@@ -104,15 +110,14 @@ void execute(command_t c){
 		}
 		break;
 	case OR_COMMAND:
-		pid_t pid = fork();
-		int status;	
+		pid = fork();
 		
 		if(pid == 0){
 			//If child
 			execute(c->u.command[0]);
 		} else if(pid > 0){
 			waitpid(pid, &status, 0);
-			int exitStatus = WEXITSTATUS(status);
+			exitStatus = WEXITSTATUS(status);
 			// OR COMMAND
 			//If status is not equal to 0, we run u.command[1], otherwise we exit with status 0
 			if(exitStatus != 0){
@@ -138,8 +143,7 @@ void execute(command_t c){
 	case SEQUENCE_COMMAND:
 		//TODO: Check this logic
 		//Sequence command: Execute left subtree, then right
-		pid_t pid = fork();
-		int status, exitStatus;
+		pid = fork();
 		
 		if(pid == 0){
 			//Child process executes left subtree, returns
@@ -158,7 +162,6 @@ void execute(command_t c){
 				waitpid(pid2,&status,0);
 				exitStatus = WEXITSTATUS(status);
 				c->u.command[1]->status = exitStatus;
-				c->command->status = exitStatus;
 				_exit(exitStatus);
 			} else if(pid2 < 0){
 				error(1,0,"Error: Fork failed\n");
@@ -168,8 +171,8 @@ void execute(command_t c){
 		}
 		break;
 	case SUBSHELL_COMMAND:
-		pid_t pid = fork();
-		int status;
+		
+		pid = fork();
 		//Recursively call execute, but set redirection first
 		if(pid == 0){
 			//If child process
@@ -185,11 +188,11 @@ void execute(command_t c){
 			error(1,0,"Error: Fork failed\n");
 		}
 		break;
-	case PIPE_COMMAND:
+	case PIPE_COMMAND: ;
 		int filedescriptor[2];
 		if (pipe(buf) != 0 )
       		error (1, errno, "Pipes could not be initialized");
-		pid_t pid = fork()
+		pid = fork()
 		if (pid == 0) //Child process executes left hand side
 		{
 			dup2(filedescriptor[1], STDOUT);
@@ -197,7 +200,6 @@ void execute(command_t c){
 		}
 		else if (pid > 0) //Parent process waits for child and then executes right hand side
 		{
-			int status, int exitStatus;
 			waitpid(pid,&status,0)
 			exitStatus = WEXITSTATUS(status)
             c->u.command[0]->status = exitStatus;

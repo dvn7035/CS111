@@ -85,14 +85,13 @@ void execute(command_t c){
 			//If status is 0, we run u.command[1], otherwise we exit with whatever status
 			if(exitStatus == 0){
 				int pid2 = fork();
-
 				if(pid2 == 0){
 					execute(c->u.command[1]);
 				} else if(pid2 > 0){
 					waitpid(pid2, &status, 0);
 					exitStatus = WEXITSTATUS(status);
-
 					c->status = WEXITSTATUS(status);
+					_exit(exitStatus);
 				} else if(pid2 < 0){
 					error(1,0, "Error: Fork failed\n");
 				}
@@ -118,13 +117,13 @@ void execute(command_t c){
 			//If status is not equal to 0, we run u.command[1], otherwise we exit with status 0
 			if(exitStatus != 0){
 				pid_t pid2 = fork();
-
 				if(pid2 == 0){
 					execute(c->u.command[1]);
 				} else if(pid2 > 0){
 					waitpid(pid2, &status, 0);
 					exitStatus = WEXITSTATUS(status);
 					c->status = exitStatus;
+					_exit(exitStatus);
 				} else if(pid2 < 0){
 					error(1,0, "Error: Fork failed\n");
 				}
@@ -154,13 +153,13 @@ void execute(command_t c){
 			//Now we execute the right subtree
 			pid_t pid2 = fork();
 			if(pid2 == 0){
-				execute(c->u.command[0]);
+				execute(c->u.command[1]);
 			} else if(pid2 > 0){
 				waitpid(pid2,&status,0);
 				exitStatus = WEXITSTATUS(status);
 				c->u.command[1]->status = exitStatus;
 				c->command->status = exitStatus;
-				_exit(c->command->status);
+				_exit(exitStatus);
 			} else if(pid2 < 0){
 				error(1,0,"Error: Fork failed\n");
 			}

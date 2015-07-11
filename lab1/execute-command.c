@@ -6,6 +6,7 @@
 #include "command-internals.h"
 
 #include <error.h>
+#include <errno.h>
 #include <stddef.h>
 
 #include <unistd.h>
@@ -190,23 +191,23 @@ void execute(command_t c){
 		break;
 	case PIPE_COMMAND: ;
 		int filedescriptor[2];
-		if (pipe(buf) != 0 )
+		if (pipe(filedescriptor) != 0 )
       		error (1, errno, "Pipes could not be initialized");
-		pid = fork()
+		pid = fork();
 		if (pid == 0) //Child process executes left hand side
 		{
-			dup2(filedescriptor[1], STDOUT);
-			execute(c->command[0]);
+			dup2(filedescriptor[1], STDOUT_FILENO);
+			execute(c->u.command[0]);
 		}
 		else if (pid > 0) //Parent process waits for child and then executes right hand side
 		{
-			waitpid(pid,&status,0)
-			exitStatus = WEXITSTATUS(status)
+			waitpid(pid,&status,0);
+			exitStatus = WEXITSTATUS(status);
             c->u.command[0]->status = exitStatus;
 			if (exitStatus == 0) //if successful exit status
 			{
-				dup2(filedescriptor[0], STDIN);
-				execute(c->command[1]);
+				dup2(filedescriptor[0], STDIN_FILENO);
+				execute(c->u.command[1]);
 			}
 			else 
 				error(1, errno, "Left hand side of pipe did not execute");
@@ -215,7 +216,7 @@ void execute(command_t c){
 			error(1,0,"Error: Fork failed\n");
 		break;
 	default:
-		error(1,0 "Error: Invalid command\n");
+		error(1,0, "Error: Invalid command\n");
 		break;
 	}
 

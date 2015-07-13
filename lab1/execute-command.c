@@ -23,7 +23,7 @@ void setRedirection(command_t c);
 int
 command_status (command_t c)
 {
-  return c->status;
+	return c->status;
 }
 
 
@@ -32,7 +32,7 @@ void setRedirection(command_t c){
 	if (c->input != NULL){
 		//TODO: Check permissions for input/output files
 		int fIn = open(c->input, O_RDONLY,
-						S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		if(fIn < 0)
 			error(1,0, "Error: Unable to find input file %s\n", c->input);
 		if(dup2(fIn, STDIN_FILENO) < 0)
@@ -43,7 +43,7 @@ void setRedirection(command_t c){
 	// Check for output
 	if (c->output != NULL){
 		int fOut = open(c->output, O_CREAT | O_WRONLY | O_TRUNC,
-						S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		if(fOut < 0)
 			error(1,0, "Error: Unable to find output file %s\n", c->output);
 		if(dup2(fOut, STDOUT_FILENO) < 0)
@@ -56,14 +56,14 @@ void setRedirection(command_t c){
 
 
 void execute(command_t c){
-	
+
 	pid_t pid;
 	int status, exitStatus;
 
 	switch(c->type){
 	case SIMPLE_COMMAND:
 		pid = fork();
-		
+
 		if(pid == 0){
 			//If child process
 			setRedirection(c);
@@ -83,7 +83,7 @@ void execute(command_t c){
 		break;
 	case AND_COMMAND:
 		pid = fork();
-		
+
 		if(pid == 0){
 			//If child
 			execute(c->u.command[0]);
@@ -114,7 +114,7 @@ void execute(command_t c){
 		break;
 	case OR_COMMAND:
 		pid = fork();
-		
+
 		if(pid == 0){
 			//If child
 			execute(c->u.command[0]);
@@ -147,7 +147,7 @@ void execute(command_t c){
 		//TODO: Check this logic
 		//Sequence command: Execute left subtree, then right
 		pid = fork();
-		
+
 		if(pid == 0){
 			//Child process executes left subtree, returns
 			execute(c->u.command[0]);
@@ -174,7 +174,7 @@ void execute(command_t c){
 		}
 		break;
 	case SUBSHELL_COMMAND:
-		
+
 		pid = fork();
 		//Recursively call execute, but set redirection first
 		if(pid == 0){
@@ -194,38 +194,39 @@ void execute(command_t c){
 	case PIPE_COMMAND: ;
 		int filedescriptor[2];
 		if (pipe(filedescriptor) != 0 )
-      		error (1, errno, "Pipes could not be initialized\n");
+			error (1, errno, "Pipes could not be initialized\n");
 		pid = fork();
 		if (pid == 0) //Child process executes left hand side
 		{
-            close(filedescriptor[0]);
-			dup2(filedescriptor[1], STDOUT_FILENO);
+			close(filedescriptor[0]);
+			if(dup2(filedescriptor[1], STDOUT_FILENO) == -1){
+				error(1, errno, "Error with executing dup2\n");}
 			execute(c->u.command[0]);
 		}
 		else if (pid > 0) //Parent process waits for child and then executes right hand side
 		{
-            close(filedescriptor[1]);
 			waitpid(pid,&status,0);
 			exitStatus = WEXITSTATUS(status);
-			if (exitStatus == 0) //if successful exit status
-			{
-                pid_t pid2 = fork();
-                if (pid2 < 0)
-                    error(1, errno, "Error: Fork failed\n");
-                else if (pid2 == 0)  //Child executes right hand side
-                {
-				    dup2(filedescriptor[0], STDIN_FILENO);
-				    execute(c->u.command[1]);
-                }
-                else if (pid2 > 0) //Parent gets the exit status of both and ORs them
-                {
-                    waitpid(pid2, &status, 0);
-                    int exitStatus2 = WEXITSTATUS(status);
-                    c->status = exitStatus2 | exitStatus;
-                    close(filedescriptor[0]);
-                    _exit(c->status);
-                }
-			}
+				pid_t pid2 = fork();
+				if (pid2 < 0)
+					error(1, errno, "Error: Fork failed\n");
+				else if (pid2 == 0)  //Child executes right hand side
+				{
+					close(filedescriptor[1]);
+					if(dup2(filedescriptor[0], STDIN_FILENO) == -1){
+						error(1, errno, "Error with executing dup2\n");}
+					execute(c->u.command[1]);
+				}
+				else if (pid2 > 0) //Parent gets the exit status of both
+				{
+					close(filedescriptor[0]);
+					close(filedescriptor[1]);
+					waitpid(pid2, &status, 0);
+					int exitStatus2 = WEXITSTATUS(status);
+					c->status = exitStatus2;
+					_exit(c->status);
+				}
+			
 		}
 		else if (pid < 0)
 			error(1,0,"Error: Fork failed\n");
@@ -235,7 +236,7 @@ void execute(command_t c){
 		break;
 	}
 
-return;
+	return;
 }
 
 void

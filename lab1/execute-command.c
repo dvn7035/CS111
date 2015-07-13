@@ -198,11 +198,13 @@ void execute(command_t c){
 		pid = fork();
 		if (pid == 0) //Child process executes left hand side
 		{
+            close(filedescriptor[0]);
 			dup2(filedescriptor[1], STDOUT_FILENO);
 			execute(c->u.command[0]);
 		}
 		else if (pid > 0) //Parent process waits for child and then executes right hand side
 		{
+            close(filedescriptor[1]);
 			waitpid(pid,&status,0);
 			exitStatus = WEXITSTATUS(status);
 			if (exitStatus == 0) //if successful exit status
@@ -214,13 +216,13 @@ void execute(command_t c){
                 {
 				    dup2(filedescriptor[0], STDIN_FILENO);
 				    execute(c->u.command[1]);
-                    _exit(c->u.command[1]->status);
                 }
                 else if (pid2 > 0) //Parent gets the exit status of both and ORs them
                 {
-                    waitpid(pid, &status, 0);
+                    waitpid(pid2, &status, 0);
                     int exitStatus2 = WEXITSTATUS(status);
                     c->status = exitStatus2 | exitStatus;
+                    close(filedescriptor[0]);
                     _exit(c->status);
                 }
 			}

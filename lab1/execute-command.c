@@ -214,6 +214,7 @@ void execute(command_t c){
                 {
 				    dup2(filedescriptor[0], STDIN_FILENO);
 				    execute(c->u.command[1]);
+                    _exit(c->u.command[1]->status);
                 }
                 else if (pid2 > 0) //Parent gets the exit status of both and ORs them
                 {

@@ -5,6 +5,8 @@
 #include "command.h"
 #include "command-internals.h"
 
+#include <stdio.h>
+
 #include <error.h>
 #include <errno.h>
 #include <stddef.h>
@@ -178,7 +180,7 @@ void execute(command_t c){
 		if(pid == 0){
 			//If child process
 			setRedirection(c);
-			execute(c);
+			execute(c->u.subshell_command);
 		} else if(pid > 0){
 			// If parent process
 			waitpid(pid, &status, 0);
@@ -226,9 +228,6 @@ return;
 void
 execute_command (command_t c, int time_travel)
 {
-  /* FIXME: Replace this with your implementation.  You may need to
-     add auxiliary functions and otherwise modify the source code.
-     You can also use external functions defined in the GNU C Library.  */
 	pid_t pid = fork();
 	int status;
 

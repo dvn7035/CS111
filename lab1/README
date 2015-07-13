@@ -17,5 +17,16 @@ what error the program encountered.
 Current Limitations:
 
 - None encountered
+- A script ending in a comment returns errors
+
+Implementation notes for Lab 1B:
+Lab 1B is tested for most basic test cases but has not been comprehensively
+tested for all cases. The main function of execute-command.c is execute(command)
+which recursively calls itself until it reaches a simple command. forks are used
+in order to retrieve status codes from a successful or unsuccessful command
+execution.
 
 
+Current Limitations:
+
+-Any script that is incorrectly parsed by read-command in 1A will not work for 1B

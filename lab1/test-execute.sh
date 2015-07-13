@@ -4,8 +4,11 @@
 # Tien Le (604180315)
 # David Nguyen (304177673)
 
-tmp=a
+# Modeled after test-p-ok and test-p-bad.
+
+tmp=$0-$$.tmp
 mkdir "$tmp" || exit
+
 
 (
 cd "$tmp" || exit
@@ -47,4 +50,4 @@ test ! -s test.err || {
 
 ) || exit
 
-rm -rf "$tmp"
+rm -fr "$tmp"

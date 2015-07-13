@@ -33,18 +33,18 @@ void setRedirection(command_t c){
 						S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		if(fIn < 0)
 			error(1,0, "Error: Unable to find input file %s\n", c->input);
-		if(dup2(fIn, 0) < 0)
+		if(dup2(fIn, STDIN_FILENO) < 0)
 			error(1,0, "Error: Execution of dup2 failed\n");
 		if(close(fIn) < 0)
 			error(1,0, "Error: Clossing input file failed\n");
 	}
 	// Check for output
 	if (c->output != NULL){
-		int fOut = open(c->input, O_CREAT | O_WRONLY | O_TRUNC,
+		int fOut = open(c->output, O_CREAT | O_WRONLY | O_TRUNC,
 						S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		if(fOut < 0)
 			error(1,0, "Error: Unable to find output file %s\n", c->output);
-		if(dup2(fOut, 0) < 0)
+		if(dup2(fOut, STDOUT_FILENO) < 0)
 			error(1,0, "Error: Execution of dup2 failed\n");
 		if(close(fOut) < 0)
 			error(1,0, "Error: Clossing input file failed\n");

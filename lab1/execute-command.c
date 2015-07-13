@@ -241,5 +241,4 @@ execute_command (command_t c, int time_travel)
 	} else if(pid < 0){
 		error(1,0,"Error: Fork failed\n");
 	}
-	execute(c);
 }

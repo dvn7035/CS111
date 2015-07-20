@@ -54,6 +54,9 @@ main (int argc, char **argv)
 
   command_t last_command = NULL;
   command_t command;
+  //if time travel is true and print command is false
+    //do this
+  //else do the while loop below  
   while ((command = read_command_stream (command_stream)))
     {
       if (print_tree)

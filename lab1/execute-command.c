@@ -255,3 +255,75 @@ execute_command (command_t c, int time_travel)
 		error(1,0,"Error: Fork failed\n");
 	}
 }
+
+//TIME TRAVEL IMPLEMENTATION OF EXECUTE COMMAND
+
+//////////////////////////////////////////////////////
+// List implementation for commands
+//////////////////////////////////////////////////////
+typedef struct listNode* listNode_t;
+
+typedef struct listNode
+{
+	graphNode_t node;
+	char** readlist;
+	char** writelist;
+	listNode_t head;
+	listNode_t next;
+} listNode;
+
+//Is this needed?
+listNode_t initList(void)
+{
+	listNode_t node = checked_malloc(sizeof(listNode));
+	readlist =  NULL;
+	writelist = NULL;
+	next = NULL;
+	return node;
+}
+
+//Insert a node into the list
+void listInsert(listNode_t* mylist, graphNode_t data, char** rl, char** wl)
+{
+	listNode_t to_insert = malloc(sizeof(listNode));
+	to_insert->node = data;
+	to_insert->readlist = rl;
+	to_insert->writelist = wl;
+	to_insert->next = NULL;
+
+	if (*mylist == NULL)
+		*mylist = to_insert;
+	else
+	{
+		listNode_t walk = *mylist;
+		listNode_t prev = NULL;
+		while (walk)
+		{
+			prev = walk;
+			walk = walk->next;
+		}
+		prev->next = to_insert;
+	}
+	return;
+}
+//////////////////////////////////////////////////////
+// Graph implementation for commands
+//////////////////////////////////////////////////////
+typedef struct graphNode* graphNode_t
+struct graphNode
+{
+	command_t cmd; // Root command tree
+ 	pid_t pid; // Uninitialized means that it has not spawned a child
+	graphNode_t* before;
+}
+
+typedef struct[
+	gNode_Queue no_dependencies; // Linked list of graphnodes
+	gNode_Queue dependencies;
+} dependencyGraph;
+
+
+//TODO:Dependency 
+
+//TODO:Time travel execution function
+//Will incorporate everything above to parallelize execution

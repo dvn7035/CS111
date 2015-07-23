@@ -1,6 +1,6 @@
 // CS 111
 //Part 1c
-
+#include <unistd.h>
 //Declarations for data structures used in time travel execution
 typedef struct wordNode* wordNode_t;
 typedef struct listNode* listNode_t;
@@ -39,3 +39,6 @@ typedef struct dependencyGraph{
 	listNode_t dependencies;
 } dependencyGraph;
 
+int haveDependency(const listNode_t, const listNode_t);
+int executeGraph(dependencyGraph_t);
+dependencyGraph_t buildDependencyGraph(command_stream_t);

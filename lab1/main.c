@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #include "command.h"
-
+#include "execute-command.h"
 static char const *program_name;
 static char const *script_name;
 
@@ -59,7 +59,7 @@ main (int argc, char **argv)
   //else do the while loop below
   if (time_travel && !print_tree)
   {
-    DependencyGraph *graph = createGraph(command_stream_t stream); 
+    dependencyGraph_t graph = buildDependencyGraph(command_stream); 
     int finalStatus = 0;
     finalStatus = executeGraph(graph);
     return finalStatus;

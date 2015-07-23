@@ -400,5 +400,16 @@ processCommand(command_t cmd, listNode_t* node){
 
 //TODO:Dependency 
 
+bool haveDependency (const listNode_t cmdTree1, const listNode_t cmdTree2 )
+{
+    if (listIntersects(cmdTree1->writelist, cmdTree2->readlist))
+        return true;  //RAW dependency
+    if (listIntersects(cmdTree1->writelist, cmdTree2->writelist))
+        return true; //WAW dependency
+    if (listIntersects(cmdTree1->readlist, cmdTree2->writelist))
+        return true; //WAR dependency
+    return false;
+}
+
 //TODO:Time travel execution function
 //Will incorporate everything above to parallelize execution

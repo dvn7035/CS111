@@ -333,7 +333,7 @@ void wordInsert(wordNode_t* mylist, char* data)
 	}
 	return;
 }
-
+//Checks if the two arguments have any nodes in common
 int wordlistIntersects (const wordNode_t list1, const wordNode_t list2)
 {
 	wordNode_t list1_ptr = list1;
@@ -363,8 +363,6 @@ processCommand(command_t cmd, listNode_t* node){
 
 	switch(cmd->type){
 		case SIMPLE_COMMAND:
-			//Add input and output to read/write list if applicable
-			//TODO: What about duplicates?
 			if(cmd->input != NULL)
 				wordInsert( &rlist, cmd->input);
 			if(cmd->output != NULL)
@@ -386,7 +384,6 @@ processCommand(command_t cmd, listNode_t* node){
 				wordInsert( &wlist, cmd->output);
 			processCommand(cmd->u.subshell_command, node);
 			break;
-		
 		case AND_COMMAND:
 		case SEQUENCE_COMMAND:
 		case OR_COMMAND:
@@ -398,10 +395,8 @@ processCommand(command_t cmd, listNode_t* node){
 	return;
 }
 
-//TODO:Dependency 
-
 int
-haveDependency (const listNode_t cmdTree1, const listNode_t cmdTree2 )
+haveDependency (const listNode_t cmdTree1, const listNode_t cmdTree2)
 {
 	if (wordlistIntersects(cmdTree1->writelist, cmdTree2->readlist))
 		return 1;  //RAW dependency
@@ -412,28 +407,29 @@ haveDependency (const listNode_t cmdTree1, const listNode_t cmdTree2 )
 	return 0;
 }
 
-dependencyGraph* buildDependencyGraph (command_stream_t stream)
+dependencyGraph_t buildDependencyGraph (command_stream_t stream)
 {
-    dependencyGraph* to_return = checked_malloc(sizeof(dependencyGraph));
+    dependencyGraph_t to_return = checked_malloc(sizeof(dependencyGraph));
     to_return->no_dependencies = NULL;
     to_return->dependencies = NULL;
 
     command_t command = NULL;
     listNode_t newListNode = NULL;
     listNode_t currentCommandTrees = NULL;
-    while ( (command = read_command_stream(stream)) //might change
+    while ( (command = read_command_stream(stream))
     {
-        newListNode = checked_malloc(sizeof(listNode_t);
-        newListNode->node = NULL;
-        processCommand(command, &newListNode);  //newList node will have its RL and WL filled
         graphNode_t newGraphNode = checked_malloc(sizeof(graphNode)); //Allocate a graph node
         newGraphNode->cmd = command; //set it to the command recieved from the stream
         newGraphNode->before = NULL; //set the new graph node's before field to NULL
+
+        newListNode = checked_malloc(sizeof(listNode_t);
+        processCommand(command, &newListNode);  //newList node will have its RL and WL filled
         newListNode->node = newGraphNode //set the newListNode's graph to this new graph
+
         listNode_t checkDependencies = currentCommandTrees;
-        int count;
+        int count = 0;
         int arbitrarySize = 10;
-        newListNode->node->before = checked_malloc(sizeof(graphNode_t)*arbitrarySize));
+        newGraphNode->before = checked_malloc(sizeof(graphNode_t)*arbitrarySize));
         while (checkDependencies)
         {
             if (haveDependecy(newListNode, checkDependencies))
@@ -441,29 +437,23 @@ dependencyGraph* buildDependencyGraph (command_stream_t stream)
                 if (count >= arbitrarySize)
                 {
                     arbitrarySize *= 2;
-                    newListNode->node->before = checked_realloc(newListNode->node->before, sizeof(graphNode_t)*arbitrarySize);
+                    newGraphNode->before = checked_realloc(newGraphNode->before, sizeof(graphNode_t)*arbitrarySize);
                 }
-                newListNode->node->before[count++] = checkDependencies->node;
+                newGraphNode->before[count] = checkDependencies->node;
+				count++;
             }
             checkDependencies = checkDependencies->next;
         }
         listInsert(&currentCommandTrees, newListNode);
-        if (newListNode->node->before = NULL)
-            listInsert(&(to_return->no_dependencies), newListNode->node);
+        if (newGraphNode->before == NULL)
+            listInsert(&(to_return->no_dependencies), newGraphNode);
         else
-            listInsert(&(to_return->no_dependencies), newListNode->node);       
+            listInsert(&(to_return->dependencies), newGraphNode);       
     }
     return to_return;
 }
 
-
-int executeGraph(dependencyGraph* graph)
-{
-    executeNoDependencies(graph->no_dependencies);
-    executeDependencies(graph->dependencies);
-    return 0;
-}
-
+//Execute everything that doesn't need to wait for another process
 void executeNoDependencies (listNode_t no_dependencies)
 {
 	listNode_t noDependency;
@@ -480,7 +470,7 @@ void executeNoDependencies (listNode_t no_dependencies)
 	return;
 }
 
-
+//Wait for all dependencies to finish executing, then execute the command tree
 void executeDependencies (listNode_t dependencies)
 {
 	listNode_t dependency;
@@ -503,4 +493,12 @@ void executeDependencies (listNode_t dependencies)
             currentNode->pid = pid;
     }
     return;
+}
+
+//Execute no dependencies then execute dependencies
+int executeGraph(dependencyGraph_t graph)
+{
+    executeNoDependencies(graph->no_dependencies);
+    executeDependencies(graph->dependencies);
+    return 0;
 }

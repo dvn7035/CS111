@@ -276,7 +276,7 @@ typedef struct listNode
 //Instantiates an instance of listnode and returns pointer to itself
 listNode_t listInsert(listNode_t* mylist, graphNode_t data)
 {
-	listNode_t to_insert = malloc(sizeof(listNode));
+	listNode_t to_insert = checked_malloc(sizeof(listNode));
 	to_insert->node = data;
 	to_insert->readlist = NULL;
 	to_insert->writelist = NULL;
@@ -310,7 +310,7 @@ typedef struct wordNode
 
 void wordInsert(wordNode_t* mylist, char* data)
 {
-	wordNode_t to_insert = malloc(sizeof(wordNode));
+	wordNode_t to_insert = checked_malloc(sizeof(wordNode));
 	to_insert->data = data;
 	to_insert->next = NULL;
 
@@ -366,30 +366,32 @@ typedef struct dependencyGraph{
 
 void
 processCommand(command_t cmd, listNode_t* node){
+	wordNode_t rlist = (*node)->readlist;
+	wordNode_t wlist = (*node)->writelist;
+
 	switch(cmd->type)
 		case SIMPLE_COMMAND:
 			//Add input and output to read/write list if applicable
 			//TODO: What about duplicates?
 			if(cmd->input != NULL)
-				wordInsert( &((*node)->readlist), cmd->input);
+				wordInsert( &rlist, cmd->input);
 			if(cmd->output != NULL)
-				wordInsert( &((*node)->writelist), cmd->output);
-			}
+				wordInsert( &wlist, cmd->output);
 			//Store every word that does not begin with '-'
 			//Does this work?
 			char **word = cmd->u.word;
 			while(*word){
 				if( **word != '-')
-					wordInsert( &((*node)->readlist), *word);
-				word++
+					wordInsert( &rlist, *word);
+				word++;
 			}
 			break;
 		//For subshell, add input and output and recursively call processCommand
 		case SUBSHELL_COMMAND:
 			if(cmd->input != NULL)
-				wordInsert( &((*node)->readlist), cmd->input);
+				wordInsert( &rlist, cmd->input);
 			if(cmd->output != NULL)
-				wordInsert( &((*node)->writelist), cmd->output);
+				wordInsert( &wlist, cmd->output);
 			processCommand(cmd->u.subshell_command, node);
 			break;
 		default:

@@ -259,36 +259,27 @@ execute_command (command_t c, int time_travel)
 //TIME TRAVEL IMPLEMENTATION OF EXECUTE COMMAND
 
 //////////////////////////////////////////////////////
-// List implementation for commands
+// Linked list implementation for commands
 //////////////////////////////////////////////////////
 typedef struct listNode* listNode_t;
 
 typedef struct listNode
 {
 	graphNode_t node;
-	char** readlist;
-	char** writelist;
+	wordNode_t readlist;
+	wordNode_t writelist;
+	
 	listNode_t head;
 	listNode_t next;
 } listNode;
 
-//Is this needed?
-listNode_t initList(void)
-{
-	listNode_t node = checked_malloc(sizeof(listNode));
-	readlist =  NULL;
-	writelist = NULL;
-	next = NULL;
-	return node;
-}
-
-//Insert a node into the list
-void listInsert(listNode_t* mylist, graphNode_t data, char** rl, char** wl)
+//Instantiates an instance of listnode and returns pointer to itself
+listNode_t listInsert(listNode_t* mylist, graphNode_t data)
 {
 	listNode_t to_insert = malloc(sizeof(listNode));
 	to_insert->node = data;
-	to_insert->readlist = rl;
-	to_insert->writelist = wl;
+	to_insert->readlist = NULL;
+	to_insert->writelist = NULL;
 	to_insert->next = NULL;
 
 	if (*mylist == NULL)
@@ -304,24 +295,89 @@ void listInsert(listNode_t* mylist, graphNode_t data, char** rl, char** wl)
 		}
 		prev->next = to_insert;
 	}
+	return to_insert;
+}
+
+//Linked list of char*
+//For the readlist and writelist implementations
+typedef struct wordNode* wordNode_t;
+typedef struct wordNode
+{
+	char* data;
+	wordNode_t head;
+	wordNode_t next;
+} wordNode;
+
+void wordInsert(wordNode_t* mylist, char* data)
+{
+	wordNode_t to_insert = malloc(sizeof(wordNode));
+	to_insert->data = data;
+	to_insert->next = NULL;
+
+	if (*mylist == NULL)
+		*mylist = to_insert;
+	else
+	{
+		list_t walk = *mylist;
+		list_t prev = NULL;
+		while (walk)
+		{
+			prev = walk;
+			walk = walk->next;
+		}
+		prev->next = to_insert;
+	}
 	return;
 }
 //////////////////////////////////////////////////////
 // Graph implementation for commands
 //////////////////////////////////////////////////////
 typedef struct graphNode* graphNode_t
-struct graphNode
+typedef struct graphNode
 {
 	command_t cmd; // Root command tree
  	pid_t pid; // Uninitialized means that it has not spawned a child
 	graphNode_t* before;
-}
+} graphNode;
 
-typedef struct[
-	gNode_Queue no_dependencies; // Linked list of graphnodes
-	gNode_Queue dependencies;
+typedef struct dependencyGraph{
+	listNode_t no_dependencies; // Linked list of graphnodes
+	listNode_t dependencies;
 } dependencyGraph;
 
+void
+processCommand(command_t cmd, listNode_t* node){
+	switch(cmd->type)
+		case SIMPLE_COMMAND:
+			//Add input and output to read/write list if applicable
+			//TODO: What about duplicates?
+			if(cmd->input != NULL)
+				wordInsert( &((*node)->readlist), cmd->input);
+			if(cmd->output != NULL)
+				wordInsert( &((*node)->writelist), cmd->output);
+			}
+			//Store every word that does not begin with '-'
+			//Does this work?
+			char **word = cmd->u.word;
+			while(*word){
+				if( **word != '-')
+					wordInsert( &((*node)->readlist), *word);
+				word++
+			}
+			break;
+		//For subshell, add input and output and recursively call processCommand
+		case SUBSHELL_COMMAND:
+			if(cmd->input != NULL)
+				wordInsert( &((*node)->readlist), cmd->input);
+			if(cmd->output != NULL)
+				wordInsert( &((*node)->writelist), cmd->output);
+			processCommand(cmd->u.subshell_command, node);
+			break;
+		default:
+			processCommand(cmd->u.command[0], node);
+			processCommand(cmd->u.command[1], node);
+	return;
+}
 
 //TODO:Dependency 
 

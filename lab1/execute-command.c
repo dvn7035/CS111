@@ -17,44 +17,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-
-//Declarations for data structures used in time travel execution
-typedef struct wordNode* wordNode_t;
-typedef struct listNode* listNode_t;
-typedef struct graphNode* graphNode_t;
-
-typedef struct wordNode
-{
-	char* data;
-	wordNode_t head;
-	wordNode_t next;
-} wordNode;
-
-//Linked list implementation for graphs
-typedef struct listNode
-{
-	graphNode_t node;
-	wordNode_t readlist;
-	wordNode_t writelist;
-
-	listNode_t head;
-	listNode_t next;
-
-} listNode;
-
-//For creating dependency graphs
-typedef struct graphNode
-{
-	command_t cmd; // Root command tree
-	pid_t pid; // Uninitialized means that it has not spawned a child
-	graphNode_t* before;
-} graphNode;
-
-typedef struct dependencyGraph{
-	listNode_t no_dependencies; // Linked list of graphnodes
-	listNode_t dependencies;
-} dependencyGraph;
-
+#include "executeParallel.h"
 
 ///
 // Standard non-timetravel execution
@@ -68,7 +31,6 @@ command_status (command_t c)
 {
 	return c->status;
 }
-
 
 void setRedirection(command_t c){
 	//Check for input
@@ -499,7 +461,7 @@ int executeGraph(dependencyGraph* graph)
 {
     executeNoDependencies(graph->no_dependencies);
     executeDependencies(graph->dependencies);
-    return 0; //Will change this once i figure out if either of the two functions will return an integer value
+    return 0;
 }
 
 void executeNoDependencies (listNode_t no_dependencies)

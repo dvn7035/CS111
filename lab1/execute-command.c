@@ -458,31 +458,42 @@ dependencyGraph* buildDependencyGraph (command_stream_t stream)
 
     command_t command = NULL;
     listNode_t newListNode = NULL;
-	listNode_t currentCommandTrees = NULL;
-    while ( (command = read_command_stream(stream))
+    listNode_t currentCommandTrees = NULL;
+    while ( (command = read_command_stream(stream)) //might change
     {
-
-        listInsert(&newListNode, NULL); //Allocate a list node with graphNode field set ot NULL
+        newListNode = checked_malloc(sizeof(listNode_t);
+        newListNode->node = NULL;
         processCommand(command, &newListNode);  //newList node will have its RL and WL filled
         graphNode_t newGraphNode = checked_malloc(sizeof(graphNode)); //Allocate a graph node
         newGraphNode->cmd = command; //set it to the command recieved from the stream
-		newGraphNode->before = NULL; //set the new graph node's before field to NULL
+        newGraphNode->before = NULL; //set the new graph node's before field to NULL
         newListNode->node = newGraphNode //set the newListNode's graph to this new graph
-
-		listNode_t checkDependencies = currentCommandTrees;
-		while (checkDependencies)
-		{
-			if (haveDependecy(newListNode, checkDependencies))
-				newListNode->node->before = checkDependecies->node;
-		}
-		
+        listNode_t checkDependencies = currentCommandTrees;
+        int count;
+        int arbitrarySize = 10;
+        newListNode->node->before = checked_malloc(sizeof(graphNode_t)*arbitrarySize));
+        while (checkDependencies)
+        {
+            if (haveDependecy(newListNode, checkDependencies))
+            {
+                if (count >= arbitrarySize)
+                {
+                    arbitrarySize *= 2;
+                    newListNode->node->before = checked_realloc(newListNode->node->before, sizeof(graphNode_t)*arbitrarySize);
+                }
+                newListNode->node->before[count++] = checkDependencies->node;
+            }
+            checkDependencies = checkDependencies->next;
+        }
+        listInsert(&currentCommandTrees, newListNode);
         if (newListNode->node->before = NULL)
-			listInsert(&(to_return->no_dependencies), newListNode->node);
-		else
-			listInsert(&(to_return->no_dependencies), newListNode->node);		
+            listInsert(&(to_return->no_dependencies), newListNode->node);
+        else
+            listInsert(&(to_return->no_dependencies), newListNode->node);       
     }
     return to_return;
 }
+
 
 int executeGraph(dependencyGraph* graph)
 {

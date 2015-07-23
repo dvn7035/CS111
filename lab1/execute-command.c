@@ -430,6 +430,9 @@ dependencyGraph_t buildDependencyGraph (command_stream_t stream)
         int count = 0;
         int arbitrarySize = 10;
         newGraphNode->before = checked_malloc(sizeof(graphNode_t)*arbitrarySize));
+        int i;
+        for (i = 0; i < arbitrarySize; i++)
+            newGraphNode->before[i] = NULL;
         while (checkDependencies)
         {
             if (haveDependecy(newListNode, checkDependencies))
@@ -438,6 +441,8 @@ dependencyGraph_t buildDependencyGraph (command_stream_t stream)
                 {
                     arbitrarySize *= 2;
                     newGraphNode->before = checked_realloc(newGraphNode->before, sizeof(graphNode_t)*arbitrarySize);
+                    for (i = count; i < arbitrarySize; i++)
+                        newGraphNode->before[i] = NULL;
                 }
                 newGraphNode->before[count] = checkDependencies->node;
 				count++;

@@ -17,7 +17,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include "executeParallel.h"
+#include "execute-command.h"
 
 ///
 // Standard non-timetravel execution
@@ -268,7 +268,7 @@ execute_command (command_t c, int time_travel)
 //////////////////////////////////////////////////////
 
 //Instantiates an instance of listnode and returns pointer to itself
-listNode_t listNodeInsert(listNode_t* mylist, graphNode_t data)
+listNode_t graphInsert(listNode_t* mylist, graphNode_t data)
 {
 	listNode_t to_insert = checked_malloc(sizeof(listNode));
 	to_insert->node = data;
@@ -292,7 +292,7 @@ listNode_t listNodeInsert(listNode_t* mylist, graphNode_t data)
 	return to_insert;
 }
 
-void listInsert (listNode_t* mylist, listNode_t to_insert) //Might wanna rename this function
+void listNodeInsert (listNode_t* mylist, listNode_t to_insert) //Might wanna rename this function
 {
 	if (*mylist == NULL)
 		*mylist = to_insert;
@@ -306,6 +306,7 @@ void listInsert (listNode_t* mylist, listNode_t to_insert) //Might wanna rename 
 			walk = walk->next;
 		}
 		prev->next = to_insert;
+	}
 	return;
 }
 
@@ -432,7 +433,7 @@ dependencyGraph_t buildDependencyGraph (command_stream_t stream)
         newGraphNode->before = checked_malloc(sizeof(graphNode_t)*arbitrarySize);
         while (checkDependencies)
         {
-            if (haveDependecy(newListNode, checkDependencies))
+            if (haveDependency(newListNode, checkDependencies))
             {
                 if (count >= arbitrarySize)
                 {
@@ -444,11 +445,11 @@ dependencyGraph_t buildDependencyGraph (command_stream_t stream)
             }
             checkDependencies = checkDependencies->next;
         }
-        listInsert(&currentCommandTrees, newListNode);
+        listNodeInsert(&currentCommandTrees, newListNode);
         if (newGraphNode->before == NULL)
-            listInsert(&(to_return->no_dependencies), newGraphNode);
+            graphInsert(&(to_return->no_dependencies), newGraphNode);
         else
-            listInsert(&(to_return->dependencies), newGraphNode);       
+            graphInsert(&(to_return->dependencies), newGraphNode);       
     }
     return to_return;
 }
@@ -481,7 +482,7 @@ void executeDependencies (listNode_t dependencies)
         int status; 
         for ( beforeGraph = currentNode->before; (*beforeGraph) != NULL; beforeGraph++)
 		{
-            waitpid((*beforeGraph)->pid, status, 0);
+            		waitpid((*beforeGraph)->pid, &status, 0);
 		}
 		pid_t pid = fork();
         if (pid == 0)

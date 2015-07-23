@@ -329,6 +329,25 @@ void wordInsert(wordNode_t* mylist, char* data)
 	}
 	return;
 }
+
+bool wordlistIntersects (const wordNode_t list1, const wordNode_t list2)
+{
+    wordNode_t list1_ptr = list1;
+    wordNode_t list2_ptr = NULL;
+    while (list1_ptr)
+    {
+        list2_ptr = list2;
+        while (list2_ptr)
+        {
+            if (strcmp (list1_ptr->word, list2_ptr->word) == 0 )
+                return true;
+            list2_ptr = list2_ptr->next;
+        }
+        list1_ptr = list1_ptr->next;
+    }
+    return false;
+}
+
 //////////////////////////////////////////////////////
 // Graph implementation for commands
 //////////////////////////////////////////////////////

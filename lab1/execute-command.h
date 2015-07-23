@@ -10,7 +10,7 @@ typedef struct dependencyGraph* dependencyGraph_t;
 typedef struct wordNode
 {
 	char* data;
-	wordNode_t head;
+	//wordNode_t head;
 	wordNode_t next;
 } wordNode;
 
@@ -21,7 +21,7 @@ typedef struct listNode
 	wordNode_t readlist;
 	wordNode_t writelist;
 
-	listNode_t head;
+	//listNode_t head;
 	listNode_t next;
 
 } listNode;

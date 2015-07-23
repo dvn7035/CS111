@@ -371,6 +371,7 @@ processCommand(command_t cmd, listNode_t* node){
 			//Store every word that does not begin with '-'
 			//Does this work?
 			char **word = cmd->u.word;
+			word++; //Start at u.word[1]
 			while(*word){
 				if( **word != '-')
 					wordInsert( &rlist, *word);
@@ -415,15 +416,17 @@ dependencyGraph_t buildDependencyGraph (command_stream_t stream)
     to_return->dependencies = NULL;
 
     command_t command = NULL;
-    listNode_t newListNode = NULL;
     listNode_t currentCommandTrees = NULL;
     while ( (command = read_command_stream(stream)))
     {
+	listNode_t currentCommandTrees = NULL;
         graphNode_t newGraphNode = checked_malloc(sizeof(graphNode)); //Allocate a graph node
         newGraphNode->cmd = command; //set it to the command recieved from the stream
         newGraphNode->before = NULL; //set the new graph node's before field to NULL
 
-        newListNode = checked_malloc(sizeof(listNode_t));
+        listNode_t newListNode = checked_malloc(sizeof(listNode_t));
+	newListNode->readlist = NULL;
+	newListNode->writelist = NULL;
         processCommand(command, &newListNode);  //newList node will have its RL and WL filled
         newListNode->node = newGraphNode; //set the newListNode's graph to this new graph
 

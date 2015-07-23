@@ -120,7 +120,7 @@ list* initList(void)
 
 void listInsert(list_t* mylist, command_t data)
 {
-	list_t to_insert = malloc(sizeof(list));
+	list_t to_insert = checked_malloc(sizeof(list));
 	to_insert->data = data;
 	to_insert->next = NULL;
 

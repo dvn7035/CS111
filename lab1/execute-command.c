@@ -305,7 +305,7 @@ void listInsert (listNode_t* mylist, listNode_t to_insert) //Might wanna rename 
 			prev = walk;
 			walk = walk->next;
 		}
-		prev->next = to_insert
+		prev->next = to_insert;
 	return;
 }
 
@@ -396,7 +396,7 @@ processCommand(command_t cmd, listNode_t* node){
 }
 
 int
-haveDependency (const listNode_t cmdTree1, const listNode_t cmdTree2)
+haveDependency (const listNode_t cmdTree1,const listNode_t cmdTree2)
 {
 	if (wordlistIntersects(cmdTree1->writelist, cmdTree2->readlist))
 		return 1;  //RAW dependency
@@ -416,20 +416,20 @@ dependencyGraph_t buildDependencyGraph (command_stream_t stream)
     command_t command = NULL;
     listNode_t newListNode = NULL;
     listNode_t currentCommandTrees = NULL;
-    while ( (command = read_command_stream(stream))
+    while ( (command = read_command_stream(stream)))
     {
         graphNode_t newGraphNode = checked_malloc(sizeof(graphNode)); //Allocate a graph node
         newGraphNode->cmd = command; //set it to the command recieved from the stream
         newGraphNode->before = NULL; //set the new graph node's before field to NULL
 
-        newListNode = checked_malloc(sizeof(listNode_t);
+        newListNode = checked_malloc(sizeof(listNode_t));
         processCommand(command, &newListNode);  //newList node will have its RL and WL filled
-        newListNode->node = newGraphNode //set the newListNode's graph to this new graph
+        newListNode->node = newGraphNode; //set the newListNode's graph to this new graph
 
         listNode_t checkDependencies = currentCommandTrees;
         int count = 0;
         int arbitrarySize = 10;
-        newGraphNode->before = checked_malloc(sizeof(graphNode_t)*arbitrarySize));
+        newGraphNode->before = checked_malloc(sizeof(graphNode_t)*arbitrarySize);
         while (checkDependencies)
         {
             if (haveDependecy(newListNode, checkDependencies))
@@ -462,7 +462,7 @@ void executeNoDependencies (listNode_t no_dependencies)
 		graphNode_t currentNode = noDependency->node;
 		if(pid == 0){
 			execute(currentNode->cmd);
-			exit(0);
+		//	exit(0);
 		}
 		else
 			currentNode->pid = pid;
@@ -487,7 +487,7 @@ void executeDependencies (listNode_t dependencies)
         if (pid == 0)
         {
             execute(currentNode->cmd);
-            exit(0);
+	//  exit(0);
         }
         else
             currentNode->pid = pid;

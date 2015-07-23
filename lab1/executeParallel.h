@@ -5,6 +5,7 @@
 typedef struct wordNode* wordNode_t;
 typedef struct listNode* listNode_t;
 typedef struct graphNode* graphNode_t;
+typedef struct dependencyGraph* dependencyGraph_t;
 
 typedef struct wordNode
 {
@@ -37,3 +38,4 @@ typedef struct dependencyGraph{
 	listNode_t no_dependencies; // Linked list of graphnodes
 	listNode_t dependencies;
 } dependencyGraph;
+

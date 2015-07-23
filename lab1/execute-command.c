@@ -10,12 +10,52 @@
 #include <error.h>
 #include <errno.h>
 #include <stddef.h>
-
+#include "alloc.h"
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+
+//Declarations for data structures used in time travel execution
+typedef struct wordNode* wordNode_t;
+typedef struct listNode* listNode_t;
+typedef struct graphNode* graphNode_t;
+
+typedef struct wordNode
+{
+	char* data;
+	wordNode_t head;
+	wordNode_t next;
+} wordNode;
+
+//Linked list implementation for graphs
+typedef struct listNode
+{
+	graphNode_t node;
+	wordNode_t readlist;
+	wordNode_t writelist;
+
+	listNode_t head;
+	listNode_t next;
+
+} listNode;
+
+//For creating dependency graphs
+typedef struct graphNode
+{
+	command_t cmd; // Root command tree
+	pid_t pid; // Uninitialized means that it has not spawned a child
+	graphNode_t* before;
+} graphNode;
+
+typedef struct dependencyGraph{
+	listNode_t no_dependencies; // Linked list of graphnodes
+	listNode_t dependencies;
+} dependencyGraph;
+
+
 
 void execute(command_t c);
 void setRedirection(command_t c);
@@ -207,26 +247,26 @@ void execute(command_t c){
 		{
 			waitpid(pid,&status,0);
 			exitStatus = WEXITSTATUS(status);
-				pid_t pid2 = fork();
-				if (pid2 < 0)
-					error(1, errno, "Error: Fork failed\n");
-				else if (pid2 == 0)  //Child executes right hand side
-				{
-					close(filedescriptor[1]);
-					if(dup2(filedescriptor[0], STDIN_FILENO) == -1){
-						error(1, errno, "Error with executing dup2\n");}
-					execute(c->u.command[1]);
-				}
-				else if (pid2 > 0) //Parent gets the exit status of both
-				{
-					close(filedescriptor[0]);
-					close(filedescriptor[1]);
-					waitpid(pid2, &status, 0);
-					int exitStatus2 = WEXITSTATUS(status);
-					c->status = exitStatus2;
-					_exit(c->status);
-				}
-			
+			pid_t pid2 = fork();
+			if (pid2 < 0)
+				error(1, errno, "Error: Fork failed\n");
+			else if (pid2 == 0)  //Child executes right hand side
+			{
+				close(filedescriptor[1]);
+				if(dup2(filedescriptor[0], STDIN_FILENO) == -1){
+					error(1, errno, "Error with executing dup2\n");}
+				execute(c->u.command[1]);
+			}
+			else if (pid2 > 0) //Parent gets the exit status of both
+			{
+				close(filedescriptor[0]);
+				close(filedescriptor[1]);
+				waitpid(pid2, &status, 0);
+				int exitStatus2 = WEXITSTATUS(status);
+				c->status = exitStatus2;
+				_exit(c->status);
+			}
+
 		}
 		else if (pid < 0)
 			error(1,0,"Error: Fork failed\n");
@@ -261,20 +301,9 @@ execute_command (command_t c, int time_travel)
 //////////////////////////////////////////////////////
 // Linked list implementation for commands
 //////////////////////////////////////////////////////
-typedef struct listNode* listNode_t;
-
-typedef struct listNode
-{
-	graphNode_t node;
-	wordNode_t readlist;
-	wordNode_t writelist;
-	
-	listNode_t head;
-	listNode_t next;
-} listNode;
 
 //Instantiates an instance of listnode and returns pointer to itself
-listNode_t listInsert(listNode_t* mylist, graphNode_t data)
+listNode_t listNodeInsert(listNode_t* mylist, graphNode_t data)
 {
 	listNode_t to_insert = checked_malloc(sizeof(listNode));
 	to_insert->node = data;
@@ -298,15 +327,8 @@ listNode_t listInsert(listNode_t* mylist, graphNode_t data)
 	return to_insert;
 }
 
-//Linked list of char*
+//Wordlist implementation
 //For the readlist and writelist implementations
-typedef struct wordNode* wordNode_t;
-typedef struct wordNode
-{
-	char* data;
-	wordNode_t head;
-	wordNode_t next;
-} wordNode;
 
 void wordInsert(wordNode_t* mylist, char* data)
 {
@@ -318,8 +340,8 @@ void wordInsert(wordNode_t* mylist, char* data)
 		*mylist = to_insert;
 	else
 	{
-		list_t walk = *mylist;
-		list_t prev = NULL;
+		wordNode_t walk = *mylist;
+		wordNode_t prev = NULL;
 		while (walk)
 		{
 			prev = walk;
@@ -330,46 +352,34 @@ void wordInsert(wordNode_t* mylist, char* data)
 	return;
 }
 
-bool wordlistIntersects (const wordNode_t list1, const wordNode_t list2)
+int wordlistIntersects (const wordNode_t list1, const wordNode_t list2)
 {
-    wordNode_t list1_ptr = list1;
-    wordNode_t list2_ptr = NULL;
-    while (list1_ptr)
-    {
-        list2_ptr = list2;
-        while (list2_ptr)
-        {
-            if (strcmp (list1_ptr->word, list2_ptr->word) == 0 )
-                return true;
-            list2_ptr = list2_ptr->next;
-        }
-        list1_ptr = list1_ptr->next;
-    }
-    return false;
+	wordNode_t list1_ptr = list1;
+	wordNode_t list2_ptr = NULL;
+	while (list1_ptr)
+	{
+		list2_ptr = list2;
+		while (list2_ptr)
+		{
+			if (strcmp (list1_ptr->data, list2_ptr->data) == 0 )
+				return 1;
+			list2_ptr = list2_ptr->next;
+		}
+		list1_ptr = list1_ptr->next;
+	}
+	return 0;
 }
 
 //////////////////////////////////////////////////////
 // Graph implementation for commands
 //////////////////////////////////////////////////////
-typedef struct graphNode* graphNode_t
-typedef struct graphNode
-{
-	command_t cmd; // Root command tree
- 	pid_t pid; // Uninitialized means that it has not spawned a child
-	graphNode_t* before;
-} graphNode;
-
-typedef struct dependencyGraph{
-	listNode_t no_dependencies; // Linked list of graphnodes
-	listNode_t dependencies;
-} dependencyGraph;
 
 void
 processCommand(command_t cmd, listNode_t* node){
 	wordNode_t rlist = (*node)->readlist;
 	wordNode_t wlist = (*node)->writelist;
 
-	switch(cmd->type)
+	switch(cmd->type){
 		case SIMPLE_COMMAND:
 			//Add input and output to read/write list if applicable
 			//TODO: What about duplicates?
@@ -386,7 +396,7 @@ processCommand(command_t cmd, listNode_t* node){
 				word++;
 			}
 			break;
-		//For subshell, add input and output and recursively call processCommand
+			//For subshell, add input and output and recursively call processCommand
 		case SUBSHELL_COMMAND:
 			if(cmd->input != NULL)
 				wordInsert( &rlist, cmd->input);
@@ -394,23 +404,30 @@ processCommand(command_t cmd, listNode_t* node){
 				wordInsert( &wlist, cmd->output);
 			processCommand(cmd->u.subshell_command, node);
 			break;
-		default:
+		
+		case AND_COMMAND:
+		case SEQUENCE_COMMAND:
+		case OR_COMMAND:
+		case PIPE_COMMAND:
 			processCommand(cmd->u.command[0], node);
 			processCommand(cmd->u.command[1], node);
+			break;
+		}
 	return;
 }
 
 //TODO:Dependency 
 
-bool haveDependency (const listNode_t cmdTree1, const listNode_t cmdTree2 )
+int
+haveDependency (const listNode_t cmdTree1, const listNode_t cmdTree2 )
 {
-    if (listIntersects(cmdTree1->writelist, cmdTree2->readlist))
-        return true;  //RAW dependency
-    if (listIntersects(cmdTree1->writelist, cmdTree2->writelist))
-        return true; //WAW dependency
-    if (listIntersects(cmdTree1->readlist, cmdTree2->writelist))
-        return true; //WAR dependency
-    return false;
+	if (wordlistIntersects(cmdTree1->writelist, cmdTree2->readlist))
+		return 1;  //RAW dependency
+	if (wordlistIntersects(cmdTree1->writelist, cmdTree2->writelist))
+		return 1; //WAW dependency
+	if (wordlistIntersects(cmdTree1->readlist, cmdTree2->writelist))
+		return 1; //WAR dependency
+	return 0;
 }
 
 //TODO:Time travel execution function

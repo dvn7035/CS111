@@ -56,6 +56,9 @@ typedef struct dependencyGraph{
 } dependencyGraph;
 
 
+///
+// Standard non-timetravel execution
+///
 
 void execute(command_t c);
 void setRedirection(command_t c);
@@ -470,7 +473,7 @@ dependencyGraph* buildDependencyGraph (command_stream_t stream)
 		while (checkDependencies)
 		{
 			if (haveDependecy(newListNode, checkDependencies))
-				newListNode->node->before = checkDependecies->node; //this is not right
+				newListNode->node->before = checkDependecies->node;
 		}
 		
         if (newListNode->node->before = NULL)
@@ -481,10 +484,6 @@ dependencyGraph* buildDependencyGraph (command_stream_t stream)
     return to_return;
 }
 
-
-//TODO:Time travel execution function
-//Will incorporate everything above to parallelize execution
-
 int executeGraph(dependencyGraph* graph)
 {
     executeNoDependencies(graph->no_dependencies);
@@ -494,39 +493,41 @@ int executeGraph(dependencyGraph* graph)
 
 void executeNoDependencies (listNode_t no_dependencies)
 {
- // for (GraphNode i : no_dependencies) // using Java-like syntax. 
-    listNode_t list_ptr;
-    for (list_ptr = no_dependencies; list_ptr ; list_ptr = list_ptr->next)
-    {
-        pid_t pid = fork();
-        if (pid == 0)
-        {
-            execute_command(list_ptr->command, 1); // written in 1B. 
-            exit(0);
-        }
-        else
-            ;
-            //list->pid = pid;
-    }
-    return; //will change the return value
+	listNode_t noDependency;
+	for( noDependency = no_dependencies; no_dependencies != NULL; noDependency = noDependency->next){
+		pid_t pid = fork();
+		graphNode_t currentNode = noDependency->node;
+		if(pid == 0){
+			execute(currentNode->cmd);
+			exit(0);
+		}
+		else
+			currentNode->pid = pid;
+	}
+	return;
 }
 
 
 void executeDependencies (listNode_t dependencies)
 {
-    for ( GraphNode i: dependencies )
+	listNode_t dependency;
+    for ( dependency = dependencies; dependency != NULL; dependency = dependency->next)
     {
-        int status;  
-        for ( GraphNode j : i->before )
-            waitpid(j->pid, NULL, status, 0);
-        pid_t pid = fork();
-        if ( pid == 0 )
+		graphNode_t currentNode = dependency->node;
+		graphNode_t* beforeGraph;
+        int status; 
+        for ( beforeGraph = currentNode->before; (*beforeGraph) != NULL; beforeGraph++)
+		{
+            waitpid((*beforeGraph)->pid, status, 0);
+		}
+		pid_t pid = fork();
+        if (pid == 0)
         {
-            execute_command(i->command);
+            execute(currentNode->cmd);
             exit(0);
         }
         else
-            //i->pid = pid;
+            currentNode->pid = pid;
     }
     return;
 }

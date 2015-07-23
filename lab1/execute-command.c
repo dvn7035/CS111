@@ -327,6 +327,23 @@ listNode_t listNodeInsert(listNode_t* mylist, graphNode_t data)
 	return to_insert;
 }
 
+void listInsert (listNode_t* mylist, listNode_t to_insert) //Might wanna rename this function
+{
+	if (*mylist == NULL)
+		*mylist = to_insert;
+	else
+	{
+		listNode_t walk = *mylist;
+		listNode_t prev = NULL;
+		while (walk)
+		{
+			prev = walk;
+			walk = walk->next;
+		}
+		prev->next = to_insert
+	return;
+}
+
 //Wordlist implementation
 //For the readlist and writelist implementations
 
@@ -438,6 +455,7 @@ dependencyGraph* buildDependencyGraph (command_stream_t stream)
 
     command_t command = NULL;
     listNode_t newListNode = NULL;
+	listNode_t currentCommandTrees = NULL;
     while ( (command = read_command_stream(stream))
     {
 
@@ -445,8 +463,20 @@ dependencyGraph* buildDependencyGraph (command_stream_t stream)
         processCommand(command, &newListNode);  //newList node will have its RL and WL filled
         graphNode_t newGraphNode = checked_malloc(sizeof(graphNode)); //Allocate a graph node
         newGraphNode->cmd = command; //set it to the command recieved from the stream
+		newGraphNode->before = NULL; //set the new graph node's before field to NULL
         newListNode->node = newGraphNode //set the newListNode's graph to this new graph
-        //Will finish tomorrow I need a couple of interfaces for graphNode and listNode where I need to insert a node (not the data itself) into the list. By the way do we even use the head field of listNode
+
+		listNode_t checkDependencies = currentCommandTrees;
+		while (checkDependencies)
+		{
+			if (haveDependecy(newListNode, checkDependencies))
+				newListNode->node->before = checkDependecies->node; //this is not right
+		}
+		
+        if (newListNode->node->before = NULL)
+			listInsert(&(to_return->no_dependencies), newListNode->node);
+		else
+			listInsert(&(to_return->no_dependencies), newListNode->node);		
     }
     return to_return;
 }

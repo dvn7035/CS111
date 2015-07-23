@@ -430,5 +430,73 @@ haveDependency (const listNode_t cmdTree1, const listNode_t cmdTree2 )
 	return 0;
 }
 
+dependencyGraph* buildDependencyGraph (command_stream_t stream)
+{
+    dependencyGraph* to_return = checked_malloc(sizeof(dependencyGraph));
+    to_return->no_dependencies = NULL;
+    to_return->dependencies = NULL;
+
+    command_t command = NULL;
+    listNode_t newListNode = NULL;
+    while ( (command = read_command_stream(stream))
+    {
+
+        listInsert(&newListNode, NULL); //Allocate a list node with graphNode field set ot NULL
+        processCommand(command, &newListNode);  //newList node will have its RL and WL filled
+        graphNode_t newGraphNode = checked_malloc(sizeof(graphNode)); //Allocate a graph node
+        newGraphNode->cmd = command; //set it to the command recieved from the stream
+        newListNode->node = newGraphNode //set the newListNode's graph to this new graph
+        //Will finish tomorrow I need a couple of interfaces for graphNode and listNode where I need to insert a node (not the data itself) into the list. By the way do we even use the head field of listNode
+    }
+    return to_return;
+}
+
+
 //TODO:Time travel execution function
 //Will incorporate everything above to parallelize execution
+
+int executeGraph(dependencyGraph* graph)
+{
+    executeNoDependencies(graph->no_dependencies);
+    executeDependencies(graph->dependencies);
+    return 0; //Will change this once i figure out if either of the two functions will return an integer value
+}
+
+void executeNoDependencies (listNode_t no_dependencies)
+{
+ // for (GraphNode i : no_dependencies) // using Java-like syntax. 
+    listNode_t list_ptr;
+    for (list_ptr = no_dependencies; list_ptr ; list_ptr = list_ptr->next)
+    {
+        pid_t pid = fork();
+        if (pid == 0)
+        {
+            execute_command(list_ptr->command, 1); // written in 1B. 
+            exit(0);
+        }
+        else
+            ;
+            //list->pid = pid;
+    }
+    return; //will change the return value
+}
+
+
+void executeDependencies (listNode_t dependencies)
+{
+    for ( GraphNode i: dependencies )
+    {
+        int status;  
+        for ( GraphNode j : i->before )
+            waitpid(j->pid, NULL, status, 0);
+        pid_t pid = fork();
+        if ( pid == 0 )
+        {
+            execute_command(i->command);
+            exit(0);
+        }
+        else
+            //i->pid = pid;
+    }
+    return;
+}

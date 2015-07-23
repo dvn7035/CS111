@@ -56,8 +56,15 @@ main (int argc, char **argv)
   command_t command;
   //if time travel is true and print command is false
     //do this
-  //else do the while loop below  
-  while ((command = read_command_stream (command_stream)))
+  //else do the while loop below
+  if (time_travel && !print_tree)
+  {
+    DependencyGraph *graph = createGraph(command_stream_t stream); 
+    int finalStatus = 0;
+    finalStatus = executeGraph(graph);
+    return finalStatus;
+  }
+    while ((command = read_command_stream (command_stream)))
     {
       if (print_tree)
 	{
@@ -70,6 +77,5 @@ main (int argc, char **argv)
 	  execute_command (command, time_travel);
 	}
     }
-
   return print_tree || !last_command ? 0 : command_status (last_command);
 }

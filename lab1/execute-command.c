@@ -6,7 +6,7 @@
 #include "command-internals.h"
 
 #include <stdio.h>
-
+#include <stdlib.h>
 #include <error.h>
 #include <errno.h>
 #include <stddef.h>
@@ -451,7 +451,7 @@ dependencyGraph_t buildDependencyGraph (command_stream_t stream)
             checkDependencies = checkDependencies->next;
         }
         listNodeInsert(&currentCommandTrees, newListNode);
-        if (newGraphNode->before == NULL)
+        if (count == 0)
             graphInsert(&(to_return->no_dependencies), newGraphNode);
         else
             graphInsert(&(to_return->dependencies), newGraphNode);       
@@ -463,15 +463,15 @@ dependencyGraph_t buildDependencyGraph (command_stream_t stream)
 void executeNoDependencies (listNode_t no_dependencies)
 {
 	listNode_t noDependency;
-	for( noDependency = no_dependencies; no_dependencies != NULL; noDependency = noDependency->next){
+	for( noDependency = no_dependencies; noDependency != NULL; noDependency = noDependency->next){
 		pid_t pid = fork();
-		graphNode_t currentNode = noDependency->node;
 		if(pid == 0){
-			execute(currentNode->cmd);
-		//	exit(0);
+			execute(noDependency->node->cmd);
+			_exit(0);
 		}
-		else if (pid > 0)
-			currentNode->pid = pid;
+		else if (pid > 0){
+			noDependency->node->pid = pid;
+		}
 	}
 	return;
 }
@@ -482,20 +482,20 @@ void executeDependencies (listNode_t dependencies)
 	listNode_t dependency;
     for ( dependency = dependencies; dependency != NULL; dependency = dependency->next)
     {
-		graphNode_t currentNode = dependency->node;
-		graphNode_t* beforeGraph;
+	graphNode_t currentNode = dependency->node;
+	graphNode_t* beforeGraph;
         int status; 
         for ( beforeGraph = currentNode->before; (*beforeGraph) != NULL; beforeGraph++)
 		{
             		waitpid((*beforeGraph)->pid, &status, 0);
 		}
-		pid_t pid = fork();
+	pid_t pid = fork();
         if (pid == 0)
         {
             execute(currentNode->cmd);
-	//  exit(0);
+	    _exit(0);
         }
-        else
+        else if(pid > 0)
             currentNode->pid = pid;
     }
     return;
@@ -504,14 +504,25 @@ void executeDependencies (listNode_t dependencies)
 //Execute no dependencies then execute dependencies
 int executeGraph(dependencyGraph_t graph)
 {
-    int status;
+    int status = 0;
     pid_t pid = fork();
     if(pid == 0){
-    	executeNoDependencies(graph->no_dependencies);
+   	executeNoDependencies(graph->no_dependencies);
     	executeDependencies(graph->dependencies);
-	}
-    else if(pid > 0){
-	waitpid(pid, &status, 0);
+	      listNode_t child = graph->no_dependencies;
+        while(child != NULL){
+                waitpid(-1, &status, 0);
+                child = child->next;
+        }
+        child = graph->dependencies;
+        while(child != NULL){
+                waitpid(child->node->pid, &status, 0);
+                child = child->next;
+        }
+
+	_exit(0);
+    }else if(pid > 0){
+      waitpid(pid, &status, 0);
 	}
     return status;
 }

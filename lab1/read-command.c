@@ -414,8 +414,8 @@ command_t recursiveParse(char** cmdStream, int subshell){
 				if(subshell == true){ error(1,0, "Error in line %d: Open parantheses '(' did not terminate with a matching closing parantheses!\n", lineNum);}
 				break;
 			}
-			if(subshell== true){error(1,0, "Error in line %d: Open Parantheses did not terminate with a matching closing parantheses!\n", lineNum);}
-			break; //TEMPFIX remove this and the line above
+			if(subshell == false)
+				break; //TEMPFIX remove this and the line above
 			operator_cmd = initialize_cmd(SEQUENCE_COMMAND);
 		} else if(**cmdStream == ')'){
 			//End of subshell command, this makes a complete command and we break

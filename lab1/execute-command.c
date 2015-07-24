@@ -419,7 +419,6 @@ dependencyGraph_t buildDependencyGraph (command_stream_t stream)
     listNode_t currentCommandTrees = NULL;
     while ( (command = read_command_stream(stream)))
     {
-	listNode_t currentCommandTrees = NULL;
         graphNode_t newGraphNode = checked_malloc(sizeof(graphNode)); //Allocate a graph node
         newGraphNode->cmd = command; //set it to the command recieved from the stream
         newGraphNode->before = NULL; //set the new graph node's before field to NULL
@@ -468,7 +467,7 @@ void executeNoDependencies (listNode_t no_dependencies)
 			execute(currentNode->cmd);
 		//	exit(0);
 		}
-		else
+		else if (pid > 0)
 			currentNode->pid = pid;
 	}
 	return;
@@ -502,7 +501,14 @@ void executeDependencies (listNode_t dependencies)
 //Execute no dependencies then execute dependencies
 int executeGraph(dependencyGraph_t graph)
 {
-    executeNoDependencies(graph->no_dependencies);
-    executeDependencies(graph->dependencies);
-    return 0;
+    int status;
+    pid_t pid = fork();
+    if(pid == 0){
+    	executeNoDependencies(graph->no_dependencies);
+    	executeDependencies(graph->dependencies);
+	}
+    else if(pid > 0){
+	waitpid(pid, &status, 0);
+	}
+    return status;
 }

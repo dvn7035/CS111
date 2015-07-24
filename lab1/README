@@ -33,11 +33,8 @@ Current Limitations:
 
 Implementation notes for Lab 1C:
 Our lab 1C implementation is parallelized at the command tree level. This is 
-defined as any two complete commands separated by 2 newlines, as shown below:
-
-echo A
-
-echo B
+defined as any two complete commands separated by a newline or any commands separated 
+by a semi-colon.
 
 We parse the complete command for a total list of reads and writes. After that,
 we compare between commmand trees (sequentially) so that if a command tree has a

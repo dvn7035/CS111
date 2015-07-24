@@ -365,25 +365,25 @@ processCommand(command_t cmd, listNode_t* node){
 	switch(cmd->type){
 		case SIMPLE_COMMAND:
 			if(cmd->input != NULL)
-				wordInsert( &rlist, cmd->input);
+				wordInsert( &((*node)->readlist), cmd->input);
 			if(cmd->output != NULL)
-				wordInsert( &wlist, cmd->output);
+				wordInsert( &((*node)->writelist), cmd->output);
 			//Store every word that does not begin with '-'
 			//Does this work?
 			char **word = cmd->u.word;
 			word++; //Start at u.word[1]
 			while(*word){
 				if( **word != '-')
-					wordInsert( &rlist, *word);
+					wordInsert( &((*node)->readlist), *word);
 				word++;
 			}
 			break;
 			//For subshell, add input and output and recursively call processCommand
 		case SUBSHELL_COMMAND:
 			if(cmd->input != NULL)
-				wordInsert( &rlist, cmd->input);
+				wordInsert( &((*node)->readlist), cmd->input);
 			if(cmd->output != NULL)
-				wordInsert( &wlist, cmd->output);
+				wordInsert( &((*node)->writelist), cmd->output);
 			processCommand(cmd->u.subshell_command, node);
 			break;
 		case AND_COMMAND:
@@ -423,27 +423,30 @@ dependencyGraph_t buildDependencyGraph (command_stream_t stream)
         newGraphNode->cmd = command; //set it to the command recieved from the stream
         newGraphNode->before = NULL; //set the new graph node's before field to NULL
 
-        listNode_t newListNode = checked_malloc(sizeof(listNode_t));
+        listNode_t newListNode = checked_malloc(sizeof(listNode));
 	newListNode->readlist = NULL;
 	newListNode->writelist = NULL;
+	newListNode->next      = NULL;
         processCommand(command, &newListNode);  //newList node will have its RL and WL filled
         newListNode->node = newGraphNode; //set the newListNode's graph to this new graph
 
         listNode_t checkDependencies = currentCommandTrees;
         int count = 0;
-        int arbitrarySize = 10;
+        int arbitrarySize = 128;
         newGraphNode->before = checked_malloc(sizeof(graphNode_t)*arbitrarySize);
+	newGraphNode->before[0] = NULL;
         while (checkDependencies)
         {
             if (haveDependency(newListNode, checkDependencies))
             {
-                if (count >= arbitrarySize)
+                newGraphNode->before[count] = checkDependencies->node;
+		count++;
+	    if (count >= arbitrarySize)
                 {
                     arbitrarySize *= 2;
                     newGraphNode->before = checked_realloc(newGraphNode->before, sizeof(graphNode_t)*arbitrarySize);
                 }
-                newGraphNode->before[count] = checkDependencies->node;
-				count++;
+		newGraphNode->before[count] = NULL;
             }
             checkDependencies = checkDependencies->next;
         }

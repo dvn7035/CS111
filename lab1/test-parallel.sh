@@ -1,9 +1,10 @@
-#!/bin/sh
+#! /bin/sh
+
 # UCLA CS 111
 # Tien Le (604180315)
 # David Nguyen (304177673)
 
-# Testing parallelization
+# Modeled after test-p-ok and test-p-bad.
 
 tmp=$0-$$.tmp
 mkdir "$tmp" || exit
@@ -13,26 +14,38 @@ mkdir "$tmp" || exit
 cd "$tmp" || exit
 
 cat >test.sh << 'EOF'
-echo test2 > tempfile && echo TEST1
-cat tempfile | tr a-z A-Z
-echo TEST3 > tempfile1
-cat tempfile1 && echo TEST4 > tempfile1 && cat tempfile1
-echo TEST6 > tempfile2
-echo TEST5 > tempfile2 && cat tempfile2 
+#Checks WAW, RAW, and WAR dependencies respectively
+
+echo Test 0;
+
+#WAW
+
+echo A > a
+
+echo B > a
+
+#RAW
+
+cat a
+
+#WAR
+
+echo C > a
+
+cat a
 
 #END TEST
 EOF
 
 cat >test.exp << 'EOF'
-TEST1
-TEST2
-TEST3
-TEST4
-TEST5
+Test 0
+B
+C
 EOF
 
 ../timetrash -t test.sh > test.out 2>test.err || exit
 
+rm a
 diff -u test.exp test.out || exit
 test ! -s test.err || {
   cat test.err
@@ -40,5 +53,4 @@ test ! -s test.err || {
 }
 
 ) || exit
-
 rm -fr "$tmp"

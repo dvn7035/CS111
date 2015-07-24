@@ -424,7 +424,7 @@ dependencyGraph_t buildDependencyGraph (command_stream_t stream)
         newGraphNode->before = NULL; //set the new graph node's before field to NULL
 
         listNode_t newListNode = checked_malloc(sizeof(listNode));
-	newListNode->readlist = NULL;
+	newListNode->readlist  = NULL;
 	newListNode->writelist = NULL;
 	newListNode->next      = NULL;
         processCommand(command, &newListNode);  //newList node will have its RL and WL filled

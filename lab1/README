@@ -17,5 +17,30 @@ what error the program encountered.
 Current Limitations:
 
 - None encountered
+- A script ending in a comment returns errors
+
+Implementation notes for Lab 1B:
+Lab 1B is tested for most basic test cases but has not been comprehensively
+tested for all cases. The main function of execute-command.c is execute(command)
+which recursively calls itself until it reaches a simple command. forks are used
+in order to retrieve status codes from a successful or unsuccessful command
+execution.
+
+
+Current Limitations:
+
+-Any script that is incorrectly parsed by read-command in 1A will not work for 1B
+
+Implementation notes for Lab 1C:
+Our lab 1C implementation is parallelized at the command tree level. This is 
+defined as any two complete commands separated by a newline or any commands separated 
+by a semi-colon.
+
+We parse the complete command for a total list of reads and writes. After that,
+we compare between commmand trees (sequentially) so that if a command tree has a
+Write after Read, Read after Write, or Write after Write dependency, we insert
+that command tree into a list of other command trees with dependecies. Commands with no
+dependencies are placed in a separate list and are executed first. The dependent
+command trees wait for their dependencies to resolve and then execute.
 
 

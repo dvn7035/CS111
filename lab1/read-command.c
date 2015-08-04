@@ -120,7 +120,7 @@ list* initList(void)
 
 void listInsert(list_t* mylist, command_t data)
 {
-	list_t to_insert = malloc(sizeof(list));
+	list_t to_insert = checked_malloc(sizeof(list));
 	to_insert->data = data;
 	to_insert->next = NULL;
 
@@ -404,6 +404,7 @@ command_t recursiveParse(char** cmdStream, int subshell){
 			}
 		} else if(**cmdStream == ';'){
 			(*cmdStream)++;
+			break; //TEMPFIX
 			operator_cmd = initialize_cmd(SEQUENCE_COMMAND);
 		} else if(**cmdStream == '\n'){
 			(*cmdStream)++;
@@ -413,6 +414,8 @@ command_t recursiveParse(char** cmdStream, int subshell){
 				if(subshell == true){ error(1,0, "Error in line %d: Open parantheses '(' did not terminate with a matching closing parantheses!\n", lineNum);}
 				break;
 			}
+			if(subshell == false)
+				break; //TEMPFIX remove this and the line above
 			operator_cmd = initialize_cmd(SEQUENCE_COMMAND);
 		} else if(**cmdStream == ')'){
 			//End of subshell command, this makes a complete command and we break

@@ -29,7 +29,7 @@
  * KERN_EMERG so that you are sure to see the messages.  By default, the
  * kernel does not print all messages to the console.  Levels like KERN_ALERT
  * and KERN_EMERG will make sure that you will see messages.) */
-#define eprintk(format, ...) printk(KERN_NOTICE format, ## __VA_ARGS__)
+#define eprintk(format, ...) printk(KERN_ALERT format, ## __VA_ARGS__)
 
 // The actual disk data is just an array of raw memory.
 // The initial array is defined in fsimg.c, based on your 'base' directory.
@@ -452,9 +452,8 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		 * the loop.  For now we do this all the time.
 		 *
 		 * EXERCISE: Your code here */
-        
 
-        if ((f_pos-2)*OSPFS_DIRENTRY_SIZE >= dir_oi->oi_size)
+        if ((f_pos-2) >= dir_oi->oi_size * OSPFS_DIRENTRY_SIZE)
 		    r = 1;		
 		    break;		
 
@@ -489,9 +488,8 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
             else if (entry_oi->oi_ftype == OSPFS_FTYPE_DIR)
                 file_type = DT_DIR;
             else if (entry_oi->oi_ftype == OSPFS_FTYPE_SYMLINK)
-                file_Type = DT_LNK
-            if ( (ok_so_far = filldir(dirent, od->od_name, strlen(od->od_name), fpos,od->od_ino, 
-                    entry_oi->oi_size, entry_oi->oi_ftype) < 0) ) 
+                file_type = DT_LNK;
+            if ( (ok_so_far = filldir(dirent, od->od_name, strlen(od->od_name), f_pos, od->od_ino, entry_oi->oi_ftype)) < 0 ) 
             {
                 //Error: if filldir returns < 0 and not yet at end of file
                 r = ok_so_far;
@@ -869,6 +867,9 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
 	// Make sure we don't read past the end of the file!
 	// Change 'count' so we never read past the end of the file.
 	/* EXERCISE: Your code here */
+    
+    if ( (*f_pos + count) > oi->oi_size )
+        count = oi->oi_size - *f_pos;
 
 	// Copy the data to user block by block
 	while (amount < count && retval >= 0) {
@@ -889,9 +890,17 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
 		// into user space.
 		// Use variable 'n' to track number of bytes moved.
 		/* EXERCISE: Your code here */
-		retval = -EIO; // Replace these lines
-		goto done;
-
+        uint32_t offset = *f_pos % OSPFS_BLKSIZE;
+        if (count + offset - amount > OSPFS_BLKSIZE)
+            n = OSPFS_BLKSIZE - offset;
+        else
+            n = count - amount;
+        retval = copy_to_user(buffer, data, n);
+        if (retval < 0)
+        {
+            retval = -EFAULT;
+            goto done;
+        }
 		buffer += n;
 		amount += n;
 		*f_pos += n;

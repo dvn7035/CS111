@@ -933,27 +933,40 @@ remove_block(ospfs_inode_t *oi)
 //   Also: Don't forget to change the size field in the metadata of the file.
 //         (The value that the final add_block or remove_block set it to
 //          is probably not correct).
-//
+//	 @David: Complete? Need to test
 //   EXERCISE: Finish off this function.
 
 static int
 change_size(ospfs_inode_t *oi, uint32_t new_size)
 {
 	uint32_t old_size = oi->oi_size;
-	int r = 0;
-
+	int r = 0, j;
 	while (ospfs_size2nblocks(oi->oi_size) < ospfs_size2nblocks(new_size)) {
-	       
-		return -EIO; // Replace this line
+	    int status = add_block(oi);
+		if(status == -ENOSPC)
+		{
+			int check = 0;
+			for(j = 0; j < r; j++)
+				check += remove_block(oi); //Should be 0 on successful calls
+			if(check != 0)
+				eprintk("Error: Problem with removing data block in change_size");
+			oi->oi_size = old_size;
+			return -ENOSPC;
+		}
+		else if(status != 0)
+			return status;
+		r++;
 	}
 	while (ospfs_size2nblocks(oi->oi_size) > ospfs_size2nblocks(new_size)) {
-	        /* EXERCISE: Your code here */
-		return -EIO; // Replace this line
+	        int status = remove_block(oi);
+			if(status)
+				return -EIO;
 	}
 
 	/* EXERCISE: Make sure you update necessary file meta data
 	             and return the proper value. */
-	return -EIO; // Replace this line
+	oi->oi_size = new_size;
+	return 0;
 }
 
 

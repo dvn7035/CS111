@@ -1190,7 +1190,7 @@ find_direntry(ospfs_inode_t *dir_oi, const char *name, int namelen)
 //	}
 //
 //	The create_blank_direntry function should use this convention.
-//
+// @david: Completed? Still need to test
 // EXERCISE: Write this function.
 
 static ospfs_direntry_t *
@@ -1203,9 +1203,28 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 	//    Use ERR_PTR if this fails; otherwise, clear out all the directory
 	//    entries and return one of them.
 
-	/* EXERCISE: Your code here. */
+	ospfs_direntry_t* entry;
+	uint32_t newEntrySize;
+	int status;
 
-	return ERR_PTR(-EINVAL); // Replace this line
+	int j;
+	for(j = 0; j < dir_oi->oi_size; j += OSPFS_DIRENTRY_SIZE)
+	{
+		entry = ospfs_inode_data(dir_oi, j);
+		if(entry->od_ino == 0)
+			return entry;
+	}
+
+	//No free entries found
+	newEntrySize = (ospfs_size2nblocks(dir_oi->oi_size) + 1) * OSPFS_BLK_SIZE;
+	status = change_size(entry, newEntrySize);
+
+	if(status != 0)
+		return ERR_PTR(status);
+
+	dir_oi->oi_size = newEntrySize;
+
+	return ospfs_inode_data(dir_oi, dir_oi->oi_size + OSPFS_DIRENTRY_SIZE);
 }
 
 // ospfs_link(src_dentry, dir, dst_dentry
@@ -1234,12 +1253,11 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 //                             exists in the given 'dir';
 //               -ENOSPC       if the disk is full & the file can't be created;
 //               -EIO          on I/O error.
-//
+//	 @david: this still needs to be tested
 //   EXERCISE: Complete this function.
 
 static int
 ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dentry) {
-	/* EXERCISE: Your code here. */
 	ospfs_inode_t* dir_inode = ospfs_inode(dir->i_ino);
 	ospfs_inode_t* src_inode = ospfs_inode(src_dentry->d_inode->i_ino);
 
@@ -1263,7 +1281,7 @@ ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dent
 	entry->od_name[dst_dentry->d_name.len] = '\0';
 
 	dir_inode->oi_nlink++;
-	src_inode->oi_nlink++l
+	src_inode->oi_nlink++;
 	return 0; //TODO: Check later if this is complete
 }
 

@@ -747,7 +747,7 @@ add_block(ospfs_inode_t *oi)
         return -ENOSPC;
     if (n < OSPFS_NDIRECT) //needs direct block
     {
-        allocated[0] = allocate_block()
+        allocated[0] = allocate_block();
         if (allocated[0] == 0) //Space could not be allocated
             return -ENOSPC;   
         memset(ospfs_block(allocated[0]), 0, OSPFS_BLKSIZE);
@@ -770,11 +770,11 @@ add_block(ospfs_inode_t *oi)
             if (allocated[0] != 0) //if indirect block was already allocated
             {
                 free_block(allocated[0]);  //clean up
-                oi->oi_indirect = 0
+                oi->oi_indirect = 0;
             }
-            return -ENOSPC
+            return -ENOSPC;
         }
-        memset(ospfs_block(allocated[1], 0, OSPFS_BLKSIZE); 
+        memset(ospfs_block(allocated[1]), 0, OSPFS_BLKSIZE); 
         //pointer assignment
         ((uint32_t*) ospfs_block(oi->oi_indirect))[direct_index(n)] = allocated[1];
     }

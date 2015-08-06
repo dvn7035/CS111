@@ -1207,7 +1207,7 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 	uint32_t newEntrySize;
 	int status;
 
-	int j;
+	uint32_t j;
 	for(j = 0; j < dir_oi->oi_size; j += OSPFS_DIRENTRY_SIZE)
 	{
 		entry = ospfs_inode_data(dir_oi, j);
@@ -1215,16 +1215,16 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 			return entry;
 	}
 
-	//No free entries found
-	newEntrySize = (ospfs_size2nblocks(dir_oi->oi_size) + 1) * OSPFS_BLK_SIZE;
-	status = change_size(entry, newEntrySize);
+	//No free entries found, allocate a new entry
+	newEntrySize = dir_oi->oi_size + OSPFS_DIRENTRY_SIZE;
+	status = change_size(dir_oi, newEntrySize);
 
-	if(status != 0)
+	if(status)
 		return ERR_PTR(status);
 
-	dir_oi->oi_size = newEntrySize;
-
-	return ospfs_inode_data(dir_oi, dir_oi->oi_size + OSPFS_DIRENTRY_SIZE);
+	entry = ospfs_inode_data(dir_oi, dir_oi->oi_size + OSPFS_DIRENTRY_SIZE);
+	entry->od_ino = 0;
+	return entry;
 }
 
 // ospfs_link(src_dentry, dir, dst_dentry

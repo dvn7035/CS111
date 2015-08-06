@@ -962,9 +962,6 @@ change_size(ospfs_inode_t *oi, uint32_t new_size)
 			if(status)
 				return -EIO;
 	}
-
-	/* EXERCISE: Make sure you update necessary file meta data
-	             and return the proper value. */
 	oi->oi_size = new_size;
 	return 0;
 }
@@ -1207,6 +1204,7 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 	//    entries and return one of them.
 
 	/* EXERCISE: Your code here. */
+
 	return ERR_PTR(-EINVAL); // Replace this line
 }
 
@@ -1242,7 +1240,31 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 static int
 ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dentry) {
 	/* EXERCISE: Your code here. */
-	return -EINVAL;
+	ospfs_inode_t* dir_inode = ospfs_inode(dir->i_ino);
+	ospfs_inode_t* src_inode = ospfs_inode(src_dentry->d_inode->i_ino);
+
+	ospfs_direntry_t *entry;
+	
+	if(dir_inode == NULL || dir_inode->oi_ftype != OSPFS_FTYPE_DIR)
+		return -EIO;
+	if(dst_dentry->d_name.len > OSPFS_MAXNAMELEN)
+		return -ENAMETOOLONG;
+	if(0)//TODO: function to find if there is a directory containing the same name
+		return -EEXIST;
+
+	entry = create_blank_direntry(dir_inode);
+	if(IS_ERR(entry))
+		return PTR_ERR(entry);
+	else if(new_entry == NULL)
+		return -EIO;
+
+	entry->od_ino				= src_dentry->d_inode->i_ino;
+	memcpy(entry->od_name, dst_dentry->d_name.name, dst_dentry->d_name.len);
+	entry->od_name[dst_dentry->d_name.len] = '\0';
+
+	dir_inode->oi_nlink++;
+	src_inode->oi_nlink++l
+	return 0; //TODO: Check later if this is complete
 }
 
 // ospfs_create

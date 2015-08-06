@@ -452,12 +452,9 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		 * the loop.  For now we do this all the time.
 		 *
 		 * EXERCISE: Your code here */
-        uint32_t file_byte_offset = (f_pos-2)* OSPFS_DIRENTRY_SIZE; 
-        if ( file_byte_offset >= dir_oi->oi_size)
-        {
-		    r = 1;		
-		    break;		
-        }
+		r = 1;		/* Fix me! */
+		break;		/* Fix me! */
+
 		/* Get a pointer to the next entry (od) in the directory.
 		 * The file system interprets the contents of a
 		 * directory-file as a sequence of ospfs_direntry structures.
@@ -479,35 +476,12 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		 */
 
 		/* EXERCISE: Your code here */
-        od = (ospfs_direntry_t*) ospfs_inode_data(dir_oi, file_byte_offset);
-        if (od && od->od_ino != 0)
-        {
-            entry_oi = ospfs_inode(od->od_ino);
-            if (entry_oi)
-            {
-                uint32_t file_type = 0;
-                if (entry_oi->oi_ftype == OSPFS_FTYPE_REG)
-                    file_type = DT_REG;
-                else if (entry_oi->oi_ftype == OSPFS_FTYPE_DIR)
-                    file_type = DT_DIR;
-                else if (entry_oi->oi_ftype == OSPFS_FTYPE_SYMLINK)
-                    file_type = DT_LNK;
-                if ( (ok_so_far = filldir(dirent, od->od_name, strlen(od->od_name), f_pos, od->od_ino, entry_oi->oi_ftype)) < 0 ) 
-                {
-                    //Error: if filldir returns < 0 and not yet at end of file
-                    r = ok_so_far;
-                    break;
-                }
-            }
-        }
-        f_pos++;
 	}
 
 	// Save the file position and return!
 	filp->f_pos = f_pos;
 	return r;
 }
-
 
 
 // ospfs_unlink(dirino, dentry)
@@ -871,9 +845,7 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
 	// Make sure we don't read past the end of the file!
 	// Change 'count' so we never read past the end of the file.
 	/* EXERCISE: Your code here */
-    
-    if ( (*f_pos + count) > oi->oi_size )
-        count = oi->oi_size - *f_pos;
+
 	// Copy the data to user block by block
 	while (amount < count && retval >= 0) {
 		uint32_t blockno = ospfs_inode_blockno(oi, *f_pos);
@@ -893,18 +865,8 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
 		// into user space.
 		// Use variable 'n' to track number of bytes moved.
 		/* EXERCISE: Your code here */
-
-		uint32_t offset = *f_pos % OSPFS_BLKSIZE;
-        if ( (count + offset - amount) > OSPFS_BLKSIZE)
-            n = OSPFS_BLKSIZE - offset;
-        else
-            n = count - amount;
-        retval = copy_to_user(buffer, data, n);
-        if (retval < 0)
-        {
-            retval = -EFAULT;
-            goto done;
-        }
+		retval = -EIO; // Replace these lines
+		goto done;
 
 		buffer += n;
 		amount += n;

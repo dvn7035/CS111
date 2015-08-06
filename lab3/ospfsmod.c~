@@ -29,7 +29,7 @@
  * KERN_EMERG so that you are sure to see the messages.  By default, the
  * kernel does not print all messages to the console.  Levels like KERN_ALERT
  * and KERN_EMERG will make sure that you will see messages.) */
-#define eprintk(format, ...) printk(KERN_ALERT format, ## __VA_ARGS__)
+#define eprintk(format, ...) printk(KERN_NOTICE format, ## __VA_ARGS__)
 
 // The actual disk data is just an array of raw memory.
 // The initial array is defined in fsimg.c, based on your 'base' directory.
@@ -452,11 +452,12 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		 * the loop.  For now we do this all the time.
 		 *
 		 * EXERCISE: Your code here */
-
-        if ((f_pos-2) >= dir_oi->oi_size)
+        uint32_t file_byte_offset = (f_pos-2)* OSPFS_DIRENTRY_SIZE; 
+        if ( file_byte_offset >= dir_oi->oi_size)
+        {
 		    r = 1;		
 		    break;		
-
+        }
 		/* Get a pointer to the next entry (od) in the directory.
 		 * The file system interprets the contents of a
 		 * directory-file as a sequence of ospfs_direntry structures.
@@ -478,24 +479,26 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 		 */
 
 		/* EXERCISE: Your code here */
-        od = (ospfs_direntry_t*) ospfs_inode_data(dir_oi,f_pos);
-        if (od || od->od_ino != 0)
+        od = (ospfs_direntry_t*) ospfs_inode_data(dir_oi, file_byte_offset);
+        if (od && od->od_ino != 0)
         {
-            entry_oi = opfs_inode(od->od_ino);
-            unsigned char file_type = -1;
-            if (entry_oi->oi_ftype == OSPFS_FTYPE_REG)
-                file_type = DT_REG;
-            else if (entry_oi->oi_ftype == OSPFS_FTYPE_DIR)
-                file_type = DT_DIR;
-            else if (entry_oi->oi_ftype == OSPFS_FTYPE_SYMLINK)
-                file_type = DT_LNK;
-            if ( (ok_so_far = filldir(dirent, od->od_name, strlen(od->od_name), f_pos, od->od_ino, entry_oi->oi_ftype)) < 0 ) 
+            entry_oi = ospfs_inode(od->od_ino);
+            if (entry_oi)
             {
-                //Error: if filldir returns < 0 and not yet at end of file
-                r = ok_so_far;
-                break;
+                uint32_t file_type = 0;
+                if (entry_oi->oi_ftype == OSPFS_FTYPE_REG)
+                    file_type = DT_REG;
+                else if (entry_oi->oi_ftype == OSPFS_FTYPE_DIR)
+                    file_type = DT_DIR;
+                else if (entry_oi->oi_ftype == OSPFS_FTYPE_SYMLINK)
+                    file_type = DT_LNK;
+                if ( (ok_so_far = filldir(dirent, od->od_name, strlen(od->od_name), f_pos, od->od_ino, entry_oi->oi_ftype)) < 0 ) 
+                {
+                    //Error: if filldir returns < 0 and not yet at end of file
+                    r = ok_so_far;
+                    break;
+                }
             }
-
         }
         f_pos++;
 	}
@@ -504,6 +507,7 @@ ospfs_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 	filp->f_pos = f_pos;
 	return r;
 }
+
 
 
 // ospfs_unlink(dirino, dentry)
@@ -870,7 +874,6 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
     
     if ( (*f_pos + count) > oi->oi_size )
         count = oi->oi_size - *f_pos;
-
 	// Copy the data to user block by block
 	while (amount < count && retval >= 0) {
 		uint32_t blockno = ospfs_inode_blockno(oi, *f_pos);
@@ -890,8 +893,9 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
 		// into user space.
 		// Use variable 'n' to track number of bytes moved.
 		/* EXERCISE: Your code here */
-        uint32_t offset = *f_pos % OSPFS_BLKSIZE;
-        if (count + offset - amount > OSPFS_BLKSIZE)
+
+		uint32_t offset = *f_pos % OSPFS_BLKSIZE;
+        if ( (count + offset - amount) > OSPFS_BLKSIZE)
             n = OSPFS_BLKSIZE - offset;
         else
             n = count - amount;
@@ -901,6 +905,7 @@ ospfs_read(struct file *filp, char __user *buffer, size_t count, loff_t *f_pos)
             retval = -EFAULT;
             goto done;
         }
+
 		buffer += n;
 		amount += n;
 		*f_pos += n;

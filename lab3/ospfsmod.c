@@ -788,7 +788,7 @@ add_block(ospfs_inode_t *oi)
             allocated[0] = allocate_block();
             if (allocated[0] == 0)
                 return -ENOSPC;
-            memset(ospfs_block(allocated[0], 0 OSPFS_BLKSIZE);
+            memset(ospfs_block(allocated[0]), 0, OSPFS_BLKSIZE);
             oi->oi_indirect2 = allocated[0];
         }
         uint32_t indirect_block_alloc = 0;
@@ -802,7 +802,7 @@ add_block(ospfs_inode_t *oi)
                     free_block(allocated[0]);
                 return -ENOSPC;
             }
-            memset(ospfs_block(allocated[1], 0, OSPFS_BLKSIZE);
+            memset(ospfs_block(allocated[1]), 0, OSPFS_BLKSIZE);
             indirect_block_alloc = allocated[1];
         }
         uint32_t direct_block_alloc = 0;
@@ -817,7 +817,7 @@ add_block(ospfs_inode_t *oi)
             if (allocated[1] != 0)
             {
                 free_block(allocated[1]);
-                oi->oi_indirect = 0
+                oi->oi_indirect = 0;
             }
             return -ENOSPC;
         }

@@ -11,16 +11,17 @@
 # information you'd like us to know, please add it at the end of the file.
 
 # Partner 1
-Name: 
-Student ID: 
-Email: 
+Name: David Nguyen 
+Student ID: 304177673
+Email: dvn7035@gmail.com
 
 # Partner 2 (if you're working in a team)
-Name: 
-Student ID: 
-Email: 
+Name: Tien Le
+Student ID: 604180315
+Email: tienle@ucla.edu
 
 # Extra credit problems
 #Extra credit problem: none
 
 # Add any other information you'd like us to know below this line.
+# Test case 11 fails and had not implemented conditional symbolic links

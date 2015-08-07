@@ -1378,10 +1378,50 @@ ospfs_symlink(struct inode *dir, struct dentry *dentry, const char *symname)
 {
 	ospfs_inode_t *dir_oi = ospfs_inode(dir->i_ino);
 	uint32_t entry_ino = 0;
-
+	ospfs_symlink_inode_t* new_inode;
+	ospfs_direntry_t* od;
 	/* EXERCISE: Your code here. */
-	return -EINVAL;
 
+	//Error checking
+	if(dir_oi->oi_ftype != OSPFS_FTYPE_DIR)
+		return -EIO;
+	if(dentry->d_name.len > OSPFS_MAXNAMELEN)
+		return -ENAMETOOLONG;
+	if(find_direntry(dir_oi, dentry->d_name.name, dentry->d_name.len) != NULL)
+		return -EEXIST;
+
+	//Find available inode
+
+	entry_ino = 2; //First 2 spaces are reserved
+	while(entry_ino < ospfs_super->os_ninodes)
+	{
+		new_inode = (ospfs_symlink_inode_t*)ospfs_inode(entry_ino);
+		//Check to see if the node is free
+		if(new_inode->oi_nlink == 0)
+			break;
+		entry_ino++;
+	}
+
+	if(entry_ino >= ospfs_super->os_ninodes)
+		return -ENOSPC;
+	od = create_blank_direntry(dir_oi);
+	if(IS_ERR(od))
+		return PTR_ERR(od);
+
+	//Populate inode
+	new_inode->oi_nlink = 1;
+	new_inode->oi_size = strlen(symname);
+	new_inode->oi_ftype = OSPFS_FTYPE_SYMLINK;
+	strncpy(new_inode->oi_symlink, symname, new_inode->oi_size);
+	new_inode->oi_symlink[new_inode->oi_size] = '\0';
+
+	//Populate directory with inode
+	strncpy(od->od_name, dentry->d_name.name, dentry->d_name.len);
+	od->od_name[dentry->d_name.len] = 0;
+	od->od_ino = entry_ino;
+	
+	//Increment number of links by 1
+	dir_oi->oi_nlink++;
 	/* Execute this code after your function has successfully created the
 	   file.  Set entry_ino to the created file's inode number before
 	   getting here. */

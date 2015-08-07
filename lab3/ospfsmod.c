@@ -866,7 +866,7 @@ remove_block(ospfs_inode_t *oi)
     if (n < OSPFS_NDIRECT)
     {
         free_block(oi->oi_direct[n]);
-        oi->oi_direct[n] = 0
+        oi->oi_direct[n] = 0;
     }
     else if ( n < OSPFS_NDIRECT + OSPFS_NINDIRECT)
     {
@@ -883,7 +883,7 @@ remove_block(ospfs_inode_t *oi)
     else if (n < OSPFS_MAXFILEBLKS)
     {
         uint32_t* double_indirection = (uint32_t *) ospfs_block(oi->oi_indirect2);
-        uint32_t* indirection = (uint32_t *) ospfs_block(indir2[indir_index(n)]);
+        uint32_t* indirection = (uint32_t *) ospfs_block(double_indirection[indir_index(n)]);
         free_block(indirection[direct_index(n)]);
         indirection[direct_index(n)] = 0;
         if (direct_index(n) == 0)
@@ -1283,7 +1283,7 @@ ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dent
 		return -EIO;
 	if(dst_dentry->d_name.len > OSPFS_MAXNAMELEN)
 		return -ENAMETOOLONG;
-	if(find_direntry(dir_oi, dst_dentry->d_name.name, dst_dentry->d_name.len)
+	if(find_direntry(dir_inode, dst_dentry->d_name.name, dst_dentry->d_name.len))
 		return -EEXIST;
 
 	entry = create_blank_direntry(dir_inode);

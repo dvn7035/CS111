@@ -938,7 +938,7 @@ remove_block(ospfs_inode_t *oi)
 //         (The value that the final add_block or remove_block set it to
 //          is probably not correct).
 //	 @David: Complete? Need to test
-//   EXERCISE: Finish off this function.
+//   EXERCISE COMPLETE: Finish off this function.
 
 static int
 change_size(ospfs_inode_t *oi, uint32_t new_size)
@@ -1208,7 +1208,7 @@ find_direntry(ospfs_inode_t *dir_oi, const char *name, int namelen)
 //
 //	The create_blank_direntry function should use this convention.
 // @david: Completed? Still need to test
-// EXERCISE: Write this function.
+// EXERCISE COMPLETE: Write this function.
 
 static ospfs_direntry_t *
 create_blank_direntry(ospfs_inode_t *dir_oi)
@@ -1271,7 +1271,7 @@ create_blank_direntry(ospfs_inode_t *dir_oi)
 //               -ENOSPC       if the disk is full & the file can't be created;
 //               -EIO          on I/O error.
 //	 @david: this still needs to be tested
-//   EXERCISE: Complete this function.
+//   EXERCISE COMPLETE//NEED TO DEBUG: Complete this function.
 
 static int
 ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dentry) {
@@ -1284,16 +1284,16 @@ ospfs_link(struct dentry *src_dentry, struct inode *dir, struct dentry *dst_dent
 		return -EIO;
 	if(dst_dentry->d_name.len > OSPFS_MAXNAMELEN)
 		return -ENAMETOOLONG;
-	if(0)//TODO: function to find if there is a directory containing the same name
+	if(find_direntry(dir_oi, dst_dentry->d_name.name, dst_dentry->d_name.len)
 		return -EEXIST;
 
 	entry = create_blank_direntry(dir_inode);
 	if(IS_ERR(entry))
 		return PTR_ERR(entry);
-	else if(new_entry == NULL)
+	else if(entry == NULL)
 		return -EIO;
 
-	entry->od_ino				= src_dentry->d_inode->i_ino;
+	entry->od_ino = src_dentry->d_inode->i_ino;
 	memcpy(entry->od_name, dst_dentry->d_name.name, dst_dentry->d_name.len);
 	entry->od_name[dst_dentry->d_name.len] = '\0';
 

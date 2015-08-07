@@ -970,7 +970,6 @@ change_size(ospfs_inode_t *oi, uint32_t new_size)
 	return 0;
 }
 
-
 // ospfs_notify_change
 //	This function gets called when the user changes a file's size,
 //	owner, or permissions, among other things.
